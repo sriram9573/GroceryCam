@@ -3,7 +3,6 @@
 Intelligent Grocery Receipt Reader & Pantry Manager.
 Snap a photo of your receipt, and GroceryCam will digitize your items, update your pantry inventory, and suggest budget-friendly recipes.
 
-![Screenshot Placeholder](https://via.placeholder.com/800x400?text=GroceryCam+Dashboard)
 
 ## Features
 - 📸 **Receipt OCR**: Extract line items using Google Cloud Vision.
