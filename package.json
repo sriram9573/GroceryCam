@@ -1,0 +1,23 @@
+{
+    "name": "grocery-cam-monorepo",
+    "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "concurrently \"npm run dev --workspace=apps/web\" \"npm run dev --workspace=apps/api\"",
+        "build": "npm run build --workspaces --if-present",
+        "lint": "npm run lint --workspaces --if-present",
+        "test": "npm run test --workspaces --if-present",
+        "e2e": "npm run e2e --workspace=apps/web",
+        "format": "prettier --write ."
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "prettier": "^3.2.5",
+        "typescript": "^5.4.5",
+        "eslint": "^8.57.0",
+        "@types/node": "^20.12.7"
+    }
+}

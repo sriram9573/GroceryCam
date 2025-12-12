@@ -1,0 +1,16 @@
+{
+    "name": "@grocery-cam/shared",
+    "version": "0.0.0",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "scripts": {
+        "lint": "eslint .",
+        "test": "vitest run"
+    },
+    "dependencies": {
+        "zod": "^3.22.4"
+    },
+    "devDependencies": {
+        "vitest": "^1.5.0"
+    }
+}

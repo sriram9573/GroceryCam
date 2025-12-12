@@ -1,0 +1,52 @@
+Fetching models with key: AIzaS...
+--- AVAILABLE MODELS ---
+Model: models/embedding-gecko-001 | Supported: embedText, countTextTokens
+Model: models/gemini-2.5-flash | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.5-pro | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.0-flash-exp | Supported: generateContent, countTokens, bidiGenerateContent
+Model: models/gemini-2.0-flash | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.0-flash-001 | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.0-flash-exp-image-generation | Supported: generateContent, countTokens, bidiGenerateContent
+Model: models/gemini-2.0-flash-lite-001 | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.0-flash-lite | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.0-flash-lite-preview-02-05 | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.0-flash-lite-preview | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.0-pro-exp | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.0-pro-exp-02-05 | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-exp-1206 | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.5-flash-preview-tts | Supported: countTokens, generateContent
+Model: models/gemini-2.5-pro-preview-tts | Supported: countTokens, generateContent
+Model: models/gemma-3-1b-it | Supported: generateContent, countTokens
+Model: models/gemma-3-4b-it | Supported: generateContent, countTokens
+Model: models/gemma-3-12b-it | Supported: generateContent, countTokens
+Model: models/gemma-3-27b-it | Supported: generateContent, countTokens
+Model: models/gemma-3n-e4b-it | Supported: generateContent, countTokens
+Model: models/gemma-3n-e2b-it | Supported: generateContent, countTokens
+Model: models/gemini-flash-latest | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-flash-lite-latest | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-pro-latest | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.5-flash-lite | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.5-flash-image-preview | Supported: generateContent, countTokens, batchGenerateContent
+Model: models/gemini-2.5-flash-image | Supported: generateContent, countTokens, batchGenerateContent
+Model: models/gemini-2.5-flash-preview-09-2025 | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-2.5-flash-lite-preview-09-2025 | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-3-pro-preview | Supported: generateContent, countTokens, createCachedContent, batchGenerateContent
+Model: models/gemini-3-pro-image-preview | Supported: generateContent, countTokens, batchGenerateContent
+Model: models/nano-banana-pro-preview | Supported: generateContent, countTokens, batchGenerateContent
+Model: models/gemini-robotics-er-1.5-preview | Supported: generateContent, countTokens
+Model: models/gemini-2.5-computer-use-preview-10-2025 | Supported: generateContent, countTokens
+Model: models/embedding-001 | Supported: embedContent
+Model: models/text-embedding-004 | Supported: embedContent
+Model: models/gemini-embedding-exp-03-07 | Supported: embedContent, countTextTokens, countTokens
+Model: models/gemini-embedding-exp | Supported: embedContent, countTextTokens, countTokens
+Model: models/gemini-embedding-001 | Supported: embedContent, countTextTokens, countTokens, asyncBatchEmbedContent
+Model: models/aqa | Supported: generateAnswer
+Model: models/imagen-4.0-generate-preview-06-06 | Supported: predict
+Model: models/imagen-4.0-ultra-generate-preview-06-06 | Supported: predict
+Model: models/imagen-4.0-generate-001 | Supported: predict
+Model: models/imagen-4.0-ultra-generate-001 | Supported: predict
+Model: models/imagen-4.0-fast-generate-001 | Supported: predict
+Model: models/veo-2.0-generate-001 | Supported: predictLongRunning
+Model: models/veo-3.0-generate-001 | Supported: predictLongRunning
+Model: models/veo-3.0-fast-generate-001 | Supported: predictLongRunning
+Model: models/veo-3.1-generate-preview | Supported: predictLongRunning
