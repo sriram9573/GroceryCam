@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
         const { receiptId, items } = parse.data;
 
-        await db.runTransaction(async (t) => {
+        await db.runTransaction(async (t: any) => {
             const pantryRef = db.collection('users').doc(uid).collection('pantry');
             const itemOps = items.map(item => {
                 const itemId = `${item.nameNorm}-${item.unit}`.toLowerCase().replace(/[^a-z0-9]/g, '-');

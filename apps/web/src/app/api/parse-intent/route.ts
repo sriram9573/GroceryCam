@@ -47,7 +47,7 @@ Rules:
 - If the input is SHORT(1 - 2 words) and sounds like a dish name(e.g., "Curry", "Pasta"), assume it is an answer -> intent: GENERATE_RECIPES, query: "${text}".
         `;
 
-        const result = await generateContent(prompt);
+        const result = await analyzeIntent(prompt);
 
         if (!result) return NextResponse.json({ intent: 'UNKNOWN' }, { status: 500 });
         const intentData = (result as any).intent ? result : (result as any);
