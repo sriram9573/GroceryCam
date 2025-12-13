@@ -8,6 +8,7 @@ export const apiClient = async (endpoint: string, options: RequestInit = {}) => 
 
     const headers = {
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true', // Bypasses ngrok free tier warning page
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
     };
