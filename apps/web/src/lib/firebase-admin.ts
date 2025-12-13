@@ -4,10 +4,16 @@ import admin from 'firebase-admin';
 // Note: This file should only be imported on the server side
 if (!admin.apps.length) {
     try {
+        // 1. Format Private Key (Handle Vercel's formatting quirks)
+        const rawKey = process.env.GOOGLE_PRIVATE_KEY || '';
+        const privateKey = rawKey
+            .replace(/^"|"$/g, '')       // Remove surrounding quotes if present
+            .replace(/\\n/g, '\n');      // Replace literal \n with actual newlines
+
         const serviceAccount = {
             projectId: process.env.GOOGLE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
             clientEmail: process.env.GOOGLE_CLIENT_EMAIL,
-            privateKey: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            privateKey: privateKey,
         };
 
         if (serviceAccount.projectId && serviceAccount.clientEmail && serviceAccount.privateKey) {
@@ -17,15 +23,15 @@ if (!admin.apps.length) {
             });
             console.log('Firebase Admin initialized with Environment Variables.');
         } else {
-            // Fallback for local dev if user hasn't set env vars yet but has files (less likely in this Vercel flow)
-            console.log('Firebase Admin: Missing detailed credentials, attempting default (might fail in Vercel if Env Vars not set).');
+            console.log('Firebase Admin: Missing detailed credentials, attempting App Default.');
             admin.initializeApp({
                 credential: admin.credential.applicationDefault(),
             });
         }
     } catch (error) {
-        console.error('Firebase Admin init failed. Check Env Vars.', error);
+        console.error('Firebase Admin init failed:', error);
     }
 }
 
+// Export Firestore (Safe Access)
 export const db = admin.firestore();
