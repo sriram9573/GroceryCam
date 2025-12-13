@@ -25,7 +25,7 @@ export async function GET(req: Request) {
         const categorySplit: Record<string, number> = {};
         const priceSparklines: Record<string, any[]> = {};
 
-        receiptsSnap.forEach(doc => {
+        receiptsSnap.forEach((doc: any) => {
             const data = doc.data();
             const dateStr = data.detectedAt || data.updatedAt || new Date().toISOString();
             const month = dateStr.substring(0, 7); // YYYY-MM
@@ -40,7 +40,7 @@ export async function GET(req: Request) {
             }
         });
 
-        pantrySnap.forEach(doc => {
+        pantrySnap.forEach((doc: any) => {
             const data = doc.data();
             if (data.priceHistory && data.priceHistory.length > 0) {
                 priceSparklines[data.name] = data.priceHistory;

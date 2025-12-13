@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
+import { detectText } from '@/lib/services/ocr';
 
 export const dynamic = 'force-dynamic';
 import { OcrRequestSchema } from '@grocery-cam/shared';

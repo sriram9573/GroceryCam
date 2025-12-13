@@ -31,4 +31,6 @@ export const contentToJSON = (text: string) => {
         console.error("JSON Parse Error:", e, "Text:", text);
         return null;
     }
-};
+}
+
+export const analyzeIntent = generateContent;
