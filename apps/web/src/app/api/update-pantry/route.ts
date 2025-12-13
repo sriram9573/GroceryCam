@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 import { UpdatePantryRequestSchema } from '@grocery-cam/shared';
 import { auth } from 'firebase-admin';
 

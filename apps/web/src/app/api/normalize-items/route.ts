@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { generateContent } from '@/lib/services/gemini';
 import { NormalizeRequestSchema } from '@grocery-cam/shared';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();

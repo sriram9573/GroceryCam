@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { generateContent } from '@/lib/services/gemini';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
     try {
         const { items, query } = await req.json();
@@ -15,7 +17,7 @@ export async function POST(req: Request) {
         let strictConstraint = "CRITICAL: usage of pantry items is MANDATORY. Do NOT generate generic recipes.";
 
         if (query) {
-            promptContext = `USER REQUEST: "${query}". You MUST generate recipes that match this request (e.g. if 'Chicken', every recipe must update Chicken). 
+            promptContext = `USER REQUEST: "${query}".You MUST generate recipes that match this request(e.g.if 'Chicken', every recipe must update Chicken). 
             If they don't have ingredients for "${query}", YOU MUST STILL SUGGEST RECIPES FOR "${query}" but mark missing ingredients as not inStock.`;
             strictConstraint = `Constraint: The User Query "${query}" is the PRIMARY constraint. Use pantry items where possible, but if they lack the main ingredient for "${query}", assume they will buy it.`;
         } else {
