@@ -4,7 +4,7 @@
     "main": "src/server.ts",
     "scripts": {
         "dev": "tsx watch src/server.ts",
-        "build": "tsc",
+        "build": "echo 'Skipping API build on Vercel'",
         "start": "node dist/src/server.js",
         "test": "vitest",
         "seed": "tsx scripts/seed.ts"
