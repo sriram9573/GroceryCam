@@ -168,62 +168,85 @@ export default function VoiceAssistant() {
         const pantryRef = collection(db, 'users', uid, 'pantry');
 
         if (action.intent === 'ADD_ITEM') {
-            const { name, quantity, unit } = action.item;
+            const itemsToAdd = action.items || (action.item ? [action.item] : []);
+            let successCount = 0;
 
-            // Fuzzy match logic: fetch all items and match name.toLowerCase()
-            // Optimized query could be used here but client-side filter is fine for personal pantry size
-            const snap = await getDocs(pantryRef);
-            const targetName = name.toLowerCase().trim();
+            for (const item of itemsToAdd) {
+                const { name, quantity, unit, category } = item;
 
-            const existingDoc = snap.docs.find(d => {
-                const data = d.data();
-                return data.name?.toLowerCase().trim() === targetName;
-            });
+                // Fuzzy match logic
+                const snap = await getDocs(pantryRef);
+                const targetName = name.toLowerCase().trim();
 
-            if (existingDoc) {
-                // Update existing
-                const docRef = doc(db, 'users', uid, 'pantry', existingDoc.id);
-                const currentQty = existingDoc.data().quantity || 0;
-                await updateDoc(docRef, { quantity: currentQty + quantity });
-                setFeedback(`Added ${quantity} more ${existingDoc.data().name || name}(s).`);
-            } else {
-                // Create new
-                await addDoc(pantryRef, {
-                    name, // Use the name from voice command if new
-                    quantity,
-                    unit: unit || 'count',
-                    category: 'Voice Added',
-                    updatedAt: new Date().toISOString()
+                const existingDoc = snap.docs.find(d => {
+                    const data = d.data();
+                    return data.name?.toLowerCase().trim() === targetName;
                 });
-                setFeedback(`Added ${quantity} ${name}(s) to pantry.`);
+
+                if (existingDoc) {
+                    // Update existing
+                    const docRef = doc(db, 'users', uid, 'pantry', existingDoc.id);
+                    const currentQty = existingDoc.data().quantity || 0;
+                    await updateDoc(docRef, { quantity: currentQty + quantity });
+                } else {
+                    // Create new
+                    await addDoc(pantryRef, {
+                        name, // Use the name from voice command if new
+                        quantity,
+                        unit: unit || 'count',
+                        category: category || 'General', // Use inferred category or fallback
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+                successCount++;
+            }
+
+            if (successCount > 0) {
+                // Summarize feedback
+                if (itemsToAdd.length === 1) {
+                    setFeedback(`Added ${itemsToAdd[0].quantity} ${itemsToAdd[0].name}(s).`);
+                } else {
+                    setFeedback(`Added ${itemsToAdd.length} items to pantry.`);
+                }
             }
         }
         else if (action.intent === 'REMOVE_ITEM') {
-            const { name, quantity } = action.item;
+            const itemsToRemove = action.items || (action.item ? [action.item] : []);
+            let removedCount = 0;
 
-            const snap = await getDocs(pantryRef);
-            const targetName = name.toLowerCase().trim();
+            for (const item of itemsToRemove) {
+                const { name, quantity } = item;
 
-            const existingDoc = snap.docs.find(d => {
-                const data = d.data();
-                return data.name?.toLowerCase().trim() === targetName;
-            });
+                const snap = await getDocs(pantryRef);
+                const targetName = name.toLowerCase().trim();
 
-            if (!existingDoc) {
-                setFeedback(`Could not find ${name} to remove.`);
-                return;
+                const existingDoc = snap.docs.find(d => {
+                    const data = d.data();
+                    return data.name?.toLowerCase().trim() === targetName;
+                });
+
+                if (existingDoc) {
+                    const docRef = doc(db, 'users', uid, 'pantry', existingDoc.id);
+                    const currentQty = existingDoc.data().quantity;
+                    const newQty = Math.max(0, currentQty - quantity);
+
+                    if (newQty === 0) {
+                        await deleteDoc(docRef);
+                    } else {
+                        await updateDoc(docRef, { quantity: newQty });
+                    }
+                    removedCount++;
+                }
             }
 
-            const docRef = doc(db, 'users', uid, 'pantry', existingDoc.id);
-            const currentQty = existingDoc.data().quantity;
-            const newQty = Math.max(0, currentQty - quantity);
-
-            if (newQty === 0) {
-                await deleteDoc(docRef);
-                setFeedback(`Removed ${existingDoc.data().name} from pantry.`);
+            if (removedCount > 0) {
+                if (itemsToRemove.length === 1) {
+                    setFeedback(`Removed ${itemsToRemove[0].name}.`);
+                } else {
+                    setFeedback(`Updated ${removedCount} items.`);
+                }
             } else {
-                await updateDoc(docRef, { quantity: newQty });
-                setFeedback(`Decreased ${existingDoc.data().name} by ${quantity}.`);
+                setFeedback("Could not find item(s) to remove.");
             }
         }
         else if (action.intent === 'ASK_CLARIFICATION') {

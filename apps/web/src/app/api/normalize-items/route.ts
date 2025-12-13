@@ -21,9 +21,13 @@ export async function POST(req: Request) {
     
     Rules:
     - Use common grocery taxonomy for category.
-    - Use metric units when possible.
-    - If quantity is unknown, infer 1 count.
-    - Extract price if visible in the line text.
+    - INTELLIGENTLY INFER UNITS based on item type if not specified in text:
+        - Meat/Poultry (Chicken, Beef, Pork) -> DEFAULT TO "lb" (NOT count).
+        - Liquids (Milk, Juice) -> DEFAULT TO "gallon" or "liter" (if large) or "fl oz".
+        - Produce (Apples, Onions) -> "count" or "lb" depending on context (usually count).
+        - Packaged goods -> "count" or "oz".
+    - If quantity is unknown, infer 1.
+    - Extract price if visible.
     - Output MUST be valid JSON array.
 
     INPUT_TEXT:

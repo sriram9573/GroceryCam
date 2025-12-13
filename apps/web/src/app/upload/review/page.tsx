@@ -152,10 +152,15 @@ export default function ReviewPage() {
                                         onChange={(e) => updateItem(i, 'unit', e.target.value)}
                                     >
                                         <option value="count">count</option>
-                                        <option value="g">g</option>
-                                        <option value="ml">ml</option>
                                         <option value="lb">lb</option>
+                                        <option value="g">g</option>
+                                        <option value="kg">kg</option>
                                         <option value="oz">oz</option>
+                                        <option value="liter">liter</option>
+                                        <option value="gallon">gallon</option>
+                                        <option value="fl oz">fl oz</option>
+                                        <option value="bunch">bunch</option>
+                                        <option value="box">box</option>
                                     </select>
                                 </td>
                                 <td className="p-2">
@@ -195,6 +200,6 @@ export default function ReviewPage() {
                     Confirm & Save to Pantry
                 </button>
             </div>
-        </div>
+        </div >
     );
 }

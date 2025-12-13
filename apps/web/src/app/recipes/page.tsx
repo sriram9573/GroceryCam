@@ -53,8 +53,12 @@ function RecipesContent() {
         <main className="max-w-5xl mx-auto p-4">
             <header className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold">Smart Recipes 🍳</h1>
-                    <p className="text-gray-500">Based on what you have in stock.</p>
+                    <h1 className="font-display text-4xl md:text-5xl font-bold text-neutral-900">
+                        Smart <span className="text-gradient">Recipes</span> 🍳
+                    </h1>
+                    <p className="text-neutral-500 mt-2 text-lg">
+                        Chef-curated meals based on your pantry.
+                    </p>
                 </div>
             </header>
 
@@ -81,49 +85,51 @@ function RecipesContent() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {recipes.map((r, i) => (
-                    <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-md transition">
-                        <div className="p-6">
-                            <h3 className="text-xl font-bold mb-2">{r.name}</h3>
-                            <div className="flex gap-4 text-sm text-gray-500 mb-4">
-                                <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {r.cookTimeMin}m</span>
-                                <span className="flex items-center gap-1"><DollarSign className="w-4 h-4" /> ~${r.estCost}</span>
+                    <div key={i} className="glass-panel p-6 rounded-2xl flex flex-col group hover:scale-[1.01] transition-all duration-300">
+                        <div className="flex justify-between items-start mb-4">
+                            <h3 className="font-display text-2xl font-bold text-neutral-800 leading-tight">{r.name}</h3>
+                            <div className="flex gap-2 text-xs font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2 py-1 rounded-lg">
+                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {r.cookTimeMin}m</span>
                             </div>
-                            <div className="mb-4">
-                                <h4 className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-2">Ingredients</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {r.ingredients.map((ing, j) => (
-                                        <span key={j} className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${ing.inStock ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                                            }`}>
-                                            {!ing.inStock && <span className="font-bold">!</span>}
-                                            {ing.name} ({ing.qty}{ing.unit})
-                                        </span>
-                                    ))}
-                                </div>
+                        </div>
 
-                                {r.ingredients.some(i => !i.inStock) && (
-                                    <div className="mt-3">
-                                        <a
-                                            href={`https://www.google.com/maps/search/grocery+store+near+me`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                                        >
-                                            <DollarSign className="w-3 h-3" />
-                                            Buy missing ingredients nearby
-                                        </a>
-                                    </div>
-                                )}
+                        <div className="mb-6">
+                            <div className="flex flex-wrap gap-2">
+                                {r.ingredients.map((ing, j) => (
+                                    <span key={j} className={`text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1 border ${ing.inStock
+                                        ? 'bg-green-50 text-green-700 border-green-100'
+                                        : 'bg-red-50 text-red-700 border-red-100'
+                                        }`}>
+                                        {!ing.inStock && <span className="font-bold text-red-600">!</span>}
+                                        {ing.name} ({ing.qty} {ing.unit})
+                                    </span>
+                                ))}
                             </div>
-                            <div className="mt-4">
-                                <h4 className="font-semibold text-xs uppercase tracking-wider text-gray-400 mb-2">Instructions</h4>
-                                <ol className="list-decimal list-inside text-sm space-y-1">
-                                    {r.steps.map((step, k) => (
-                                        <li key={k} className="text-gray-600 dark:text-gray-300">{step}</li>
-                                    ))}
-                                </ol>
-                            </div>
+
+                            {r.ingredients.some(i => !i.inStock) && (
+                                <div className="mt-3">
+                                    <a
+                                        href={`https://www.google.com/maps/search/grocery+store+near+me`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-1"
+                                    >
+                                        <DollarSign className="w-3 h-3" />
+                                        Buy missing (~${r.estCost})
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-auto pt-6 border-t border-neutral-100">
+                            <h4 className="font-bold text-xs uppercase tracking-wider text-neutral-400 mb-3">Instructions</h4>
+                            <ol className="list-decimal list-outside ml-4 space-y-2">
+                                {r.steps.map((step, k) => (
+                                    <li key={k} className="text-neutral-600 text-sm leading-relaxed pl-1">{step}</li>
+                                ))}
+                            </ol>
                         </div>
                     </div>
                 ))}

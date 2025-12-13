@@ -40,20 +40,44 @@ export default function Home() {
     };
 
     return (
-        <main className="flex min-h-screen flex-col items-center justify-center p-24">
-            <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex flex-col gap-8">
-                <h1 className="text-4xl font-bold text-center">GroceryCam 🥦</h1>
-                <p className="text-center text-lg opacity-80">
-                    Snap receipts, track pantry, save money.
-                </p>
+        <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-24 relative overflow-hidden">
+            {/* Background blobs */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-200/30 rounded-full blur-3xl" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-200/30 rounded-full blur-3xl" />
+            </div>
 
-                <button
-                    onClick={handleLogin}
-                    className="px-6 py-3 bg-green-600 text-white rounded-full font-semibold hover:bg-green-700 transition disabled:opacity-50"
-                    disabled={loading}
-                >
-                    {loading ? 'Signing in...' : 'Sign in with Google'}
-                </button>
+            <div className="z-10 max-w-lg w-full flex flex-col items-center gap-8 text-center">
+                <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-4">
+                    <h1 className="font-display text-5xl md:text-7xl font-extrabold tracking-tight text-neutral-900">
+                        Grocery<span className="text-gradient">Cam</span>
+                    </h1>
+                    <p className="text-lg text-neutral-500 max-w-sm mx-auto leading-relaxed">
+                        Your intelligent kitchen assistant. Scan receipts, track pantry, and cook smarter.
+                    </p>
+                </div>
+
+                <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 w-full max-w-xs">
+                    <button
+                        onClick={handleLogin}
+                        className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl font-bold text-lg shadow-xl shadow-orange-500/20 hover:shadow-orange-500/40 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span>Connecting...</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>Sign in with Google</span>
+                            </>
+                        )}
+                    </button>
+                    <p className="mt-6 text-xs text-neutral-400">
+                        Powered by Google Gemini & Vision AI
+                    </p>
+                </div>
             </div>
         </main>
     );

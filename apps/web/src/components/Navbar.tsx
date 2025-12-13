@@ -22,32 +22,61 @@ export default function Navbar() {
     ];
 
     return (
-        <nav className="fixed bottom-0 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 md:relative md:border-t-0 md:bg-transparent md:mb-8">
-            <div className="max-w-5xl mx-auto px-4 md:py-4 flex justify-between items-center">
-                <div className="hidden md:block font-bold text-xl text-green-600">GroceryCam</div>
+        <>
+            {/* Desktop / floating navbar container */}
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:top-6 md:bottom-auto w-[90%] md:w-auto z-50">
+                <nav className="glass-panel rounded-full px-6 py-3 flex items-center justify-between gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ring-1 ring-orange-100">
 
-                <div className="flex w-full md:w-auto justify-around md:gap-8 p-2 md:p-0">
-                    {navs.map((n) => {
-                        const Icon = n.icon;
-                        const active = pathname === n.href;
-                        return (
-                            <Link key={n.name} href={n.href} className={`flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 rounded-lg transition ${active ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-100'}`}>
-                                <Icon className="w-6 h-6" />
-                                <span className="text-xs md:text-sm font-medium">{n.name}</span>
-                            </Link>
-                        );
-                    })}
-                    <Link href="/upload" className="flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 text-green-600">
-                        <PlusCircle className="w-6 h-6" />
-                        <span className="text-xs md:text-sm font-medium">Upload</span>
-                    </Link>
+                    {/* Logo */}
+                    <div className="hidden md:block font-display font-bold text-xl text-gradient pr-4 border-r border-orange-100">
+                        GroceryCam
+                    </div>
 
-                    <button onClick={handleLogout} className="hidden md:flex flex-col md:flex-row items-center gap-1 md:gap-2 p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                        <LogOut className="w-6 h-6" />
-                        <span className="text-xs md:text-sm font-medium">Sign Out</span>
-                    </button>
-                </div>
+                    <div className="flex items-center gap-2 md:gap-6 w-full justify-between md:justify-start">
+                        {navs.map((n) => {
+                            const Icon = n.icon;
+                            const active = pathname === n.href;
+                            return (
+                                <Link
+                                    key={n.name}
+                                    href={n.href}
+                                    className={`relative group flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300 ${active ? 'text-primary-600 scale-110' : 'text-neutral-400 hover:text-neutral-800 hover:bg-orange-50'}`}
+                                >
+                                    <Icon className={`w-6 h-6 ${active ? 'fill-current opacity-20' : ''}`} strokeWidth={active ? 2.5 : 2} />
+                                    <span className="sr-only md:not-sr-only md:text-[10px] font-bold mt-1 tracking-wide uppercase opacity-0 group-hover:opacity-100 transition-opacity absolute -bottom-5 md:static md:bottom-auto text-primary-600">
+                                        {n.name}
+                                    </span>
+                                    {active && (
+                                        <span className="absolute -bottom-1 md:-bottom-2 w-1 h-1 bg-primary-500 rounded-full" />
+                                    )}
+                                </Link>
+                            );
+                        })}
+
+                        {/* Divider */}
+                        <div className="w-px h-6 bg-orange-100 mx-2" />
+
+                        <Link
+                            href="/upload"
+                            className="bg-neutral-900 text-white rounded-full p-3 md:px-5 md:py-2 flex items-center gap-2 shadow-lg hover:bg-neutral-800 hover:scale-105 transition-all active:scale-95"
+                        >
+                            <PlusCircle className="w-6 h-6 md:w-5 md:h-5" />
+                            <span className="hidden md:inline font-bold text-sm">Upload</span>
+                        </Link>
+
+                        <button
+                            onClick={handleLogout}
+                            className="text-neutral-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors"
+                            title="Sign Out"
+                        >
+                            <LogOut className="w-5 h-5" />
+                        </button>
+                    </div>
+                </nav>
             </div>
-        </nav>
+
+            {/* Spacer for content to not be hidden behind fixed nav */}
+            <div className="h-24 md:h-28" />
+        </>
     );
 }

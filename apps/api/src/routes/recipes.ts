@@ -23,7 +23,8 @@ recipesRouter.post('/recipes', async (req: Request, res: Response) => {
             If they don't have ingredients for "${query}", YOU MUST STILL SUGGEST RECIPES FOR "${query}" but mark missing ingredients as not inStock.`;
             strictConstraint = `Constraint: The User Query "${query}" is the PRIMARY constraint. Use pantry items where possible, but if they lack the main ingredient for "${query}", assume they will buy it.`;
         } else {
-            promptContext = `Suggest 15 creative recipes using THESE ingredients. Prioritize recipes where they have most ingredients.`;
+            // Reduced to 3 for speed (User requested lower latency)
+            promptContext = `Suggest 3 creative recipes using THESE ingredients. Prioritize recipes where they have most ingredients.`;
         }
 
         const prompt = `

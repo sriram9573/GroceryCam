@@ -62,49 +62,144 @@ export default function Dashboard() {
         await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'pantry', id));
     };
 
+    const getCategoryEmoji = (name: string, category: string) => {
+        const n = name.toLowerCase();
+        const c = category.toLowerCase();
+
+        // Specific item overrides
+        if (n.includes('carrot')) return '🥕';
+        if (n.includes('egg')) return '🥚';
+        if (n.includes('milk')) return '🥛';
+        if (n.includes('butter')) return '🧈';
+        if (n.includes('cheese')) return '🧀';
+        if (n.includes('chicken')) return '🍗';
+        if (n.includes('beef') || n.includes('steak')) return '🥩';
+        if (n.includes('apple')) return '🍎';
+        if (n.includes('banana')) return '🍌';
+        if (n.includes('bread')) return '🍞';
+        if (n.includes('rice')) return '🍚';
+        if (n.includes('pasta') || n.includes('noodle')) return '🍝';
+        if (n.includes('onion')) return '🧅';
+        if (n.includes('garlic')) return '🧄';
+        if (n.includes('tomato')) return '🍅';
+        if (n.includes('potato')) return '🥔';
+        if (n.includes('water')) return '💧';
+        if (n.includes('soda') || n.includes('coke')) return '🥤';
+        if (n.includes('coffee')) return '☕';
+        if (n.includes('tea')) return '🍵';
+        if (n.includes('fish') || n.includes('salmon')) return '🐟';
+        if (n.includes('oil')) return '🫗';
+        if (n.includes('salt')) return '🧂';
+        if (n.includes('cookie')) return '🍪';
+        if (n.includes('chocolate')) return '🍫';
+        if (n.includes('cream')) return '🥛';
+        if (n.includes('lime') || n.includes('lemon')) return '🍋';
+        if (n.includes('ivy gourd')) return '🥒'; // Close approximation
+        if (n.includes('mango')) return '🥭';
+        if (n.includes('orange') || n.includes('tangerine')) return '🍊';
+        if (n.includes('grape')) return '🍇';
+        if (n.includes('strawberry')) return '🍓';
+        if (n.includes('pineapple')) return '🍍';
+        if (n.includes('coconut')) return '🥥';
+        if (n.includes('watermelon')) return '🍉';
+        if (n.includes('peach')) return '🍑';
+        if (n.includes('pear')) return '🍐';
+
+        // Category fallbacks
+        if (c.includes('veg') || c.includes('produce')) return '🥬';
+        if (c.includes('fruit')) return '🍎';
+        if (c.includes('dairy')) return '🥛';
+        if (c.includes('meat')) return '🥩';
+        if (c.includes('grain') || c.includes('bread')) return '🍞';
+        if (c.includes('snack')) return '🍿';
+        if (c.includes('drink') || c.includes('beverage')) return '🥤';
+        if (c.includes('condiment') || c.includes('spice')) return '🧂';
+        if (c.includes('frozen')) return '🧊';
+
+        return '📦'; // Default package
+    };
+
     return (
-        <div className="min-h-screen pb-20 md:pb-0">
+        <div className="min-h-screen pb-24 md:pb-0">
             <Navbar />
-            <main className="max-w-5xl mx-auto p-4">
-                <header className="mb-8">
-                    <h1 className="text-3xl font-bold">Hello, {user?.displayName || 'Chef'} 👋</h1>
-                    <p className="text-gray-500">Here is what is in your pantry.</p>
+            <main className="max-w-5xl mx-auto p-4 md:pt-12 animate-in fade-in duration-700">
+                <header className="mb-8 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h1 className="font-display text-4xl md:text-5xl font-bold text-neutral-900">
+                            Hello, <span className="text-gradient">{user?.displayName?.split(' ')[0] || 'Chef'}</span> 👋
+                        </h1>
+                        <p className="text-neutral-500 mt-2 text-lg">
+                            Your kitchen is looking great today.
+                        </p>
+                    </div>
+                    {/* Simple Stats Placeholder or Action */}
+                    <div className="hidden md:flex gap-4">
+                        <div className="glass-panel px-6 py-3 rounded-2xl flex flex-col items-center">
+                            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Items</span>
+                            <span className="text-2xl font-display font-bold text-primary-600">{pantry.length}</span>
+                        </div>
+                    </div>
                 </header>
 
                 {loading ? (
-                    <div className="flex justify-center p-12"><Loader2 className="animate-spin" /></div>
+                    <div className="flex justify-center p-12">
+                        <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
+                    </div>
                 ) : pantry.length === 0 ? (
-                    <div className="bg-white dark:bg-gray-800 p-8 rounded-xl text-center border-2 border-dashed border-gray-200 dark:border-gray-700">
-                        <h3 className="text-xl font-semibold mb-2">Your pantry is empty</h3>
-                        <p className="text-gray-500 mb-6">Scan your first receipt to get started.</p>
-                        <Link href="/upload" className="bg-green-600 text-white px-6 py-2 rounded-full font-medium hover:bg-green-700">Scan Receipt</Link>
+                    <div className="glass-panel p-12 rounded-3xl text-center border-2 border-dashed border-orange-100 flex flex-col items-center gap-4">
+                        <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-2">
+                            <img src="https://em-content.zobj.net/source/apple/391/basket_1f9fa.png" alt="Empty Basket" className="w-10 h-10" />
+                        </div>
+                        <h3 className="font-display text-2xl font-bold text-neutral-900">Your pantry is empty</h3>
+                        <p className="text-neutral-500 max-w-sm">
+                            It looks like you haven't added anything yet. Scan your first receipt to fill it up!
+                        </p>
+                        <Link href="/upload" className="mt-4 px-8 py-3 bg-neutral-900 text-white rounded-xl font-bold hover:scale-105 transition-transform shadow-lg">
+                            Scan Receipt
+                        </Link>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {pantry.map((item) => (
-                            <div key={item.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex justify-between items-center group">
-                                <div>
-                                    <h4 className="font-semibold">{item.name}</h4>
-                                    <p className="text-sm text-gray-500">{item.category}</p>
+                            <div key={item.id} className="glass-panel p-6 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-6 group hover:scale-[1.01] transition-all duration-300 border border-orange-50 hover:border-orange-200 hover:shadow-2xl">
+                                <div className="flex items-center gap-6">
+                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-4xl">
+                                        {getCategoryEmoji(item.name, item.category)}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-display font-bold text-neutral-800 text-xl capitalize mb-1">{item.name}</h4>
+                                        <span className="inline-block px-3 py-1 rounded-full bg-orange-50 text-xs font-bold uppercase tracking-wider text-orange-600 border border-orange-100">
+                                            {item.category}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-1">
+
+                                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto p-4 sm:p-0 bg-orange-50/30 sm:bg-transparent rounded-2xl">
+                                    <div className="flex items-center bg-white border border-neutral-100 rounded-2xl p-1.5 shadow-sm">
                                         <button
                                             onClick={() => updateQuantity(item.id!, item.quantity, -1)}
-                                            className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-white dark:hover:bg-gray-800 rounded shadow-sm transition"
-                                        >-</button>
-                                        <span className="font-bold text-gray-700 dark:text-gray-200 w-8 text-center">{item.quantity}</span>
+                                            className="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-95"
+                                        >
+                                            <span className="text-xl font-bold mb-0.5">−</span>
+                                        </button>
+                                        <div className="flex flex-col items-center justify-center w-16 px-1">
+                                            <span className="font-display font-bold text-neutral-900 text-lg tabular-nums leading-none">{item.quantity}</span>
+                                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">{item.unit}</span>
+                                        </div>
                                         <button
                                             onClick={() => updateQuantity(item.id!, item.quantity, 1)}
-                                            className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-green-500 hover:bg-white dark:hover:bg-gray-800 rounded shadow-sm transition"
-                                        >+</button>
+                                            className="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-green-500 hover:bg-green-50 rounded-xl transition-all active:scale-95"
+                                        >
+                                            <span className="text-xl font-bold mb-0.5">+</span>
+                                        </button>
                                     </div>
-                                    <span className="text-xs text-gray-400 w-8">{item.unit}</span>
+
                                     <button
                                         onClick={() => deleteItem(item.id!)}
-                                        className="text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"
+                                        className="w-10 h-10 flex items-center justify-center text-neutral-300 hover:text-white hover:bg-red-500 rounded-xl transition-all shadow-sm border border-transparent hover:shadow-red-200"
+                                        title="Delete Item"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-5 h-5" />
                                     </button>
                                 </div>
                             </div>
