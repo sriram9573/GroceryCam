@@ -1,27 +1,35 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api';
-import { Loader2, Plus, Save } from 'lucide-react';
+import { Loader2, Save, Plus, X } from 'lucide-react';
 import { ItemNorm } from '@grocery-cam/shared';
+// Types needed, usually imported but for standalone component
+import ReceiptUploader from './ReceiptUploader';
 
-export default function ReviewPage() {
+interface ReceiptReviewProps {
+    initialItems?: ItemNorm[];
+    initialReceiptId?: string;
+    onCancel?: () => void;
+    onComplete?: () => void;
+}
+
+export default function ReceiptReview({ initialItems, initialReceiptId, onCancel, onComplete }: ReceiptReviewProps) {
     const router = useRouter();
-    const [items, setItems] = useState<ItemNorm[]>([]);
-    const [receiptId, setReceiptId] = useState<string>('');
+    const [items, setItems] = useState<ItemNorm[]>(initialItems || []);
+    const [receiptId, setReceiptId] = useState<string>(initialReceiptId || '');
     const [loading, setLoading] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
 
+    // Initialize from LocalStorage if props are missing
     useEffect(() => {
-        const data = localStorage.getItem('currentReceipt');
-        if (data) {
-            const parsed = JSON.parse(data);
-            setItems(parsed.items);
-            setReceiptId(parsed.receiptId);
-        } else {
-            router.push('/upload');
+        if (!initialItems && !initialReceiptId) {
+            const data = localStorage.getItem('currentReceipt');
+            if (data) {
+                const parsed = JSON.parse(data);
+                setItems(parsed.items);
+                setReceiptId(parsed.receiptId);
+            }
         }
-    }, [router]);
+    }, [initialItems, initialReceiptId]);
 
     const handleSave = async () => {
         setLoading(true);
@@ -36,7 +44,6 @@ export default function ReviewPage() {
             await runTransaction(db, async (t) => {
                 // 1. Prepare Refs
                 const userPantryRef = collection(db, 'users', uid, 'pantry');
-                const receiptRef = doc(db, 'receipts', receiptId);
 
                 // 2. Calculate Item Refs and Read
                 const itemOps = items.map(item => {
@@ -45,18 +52,22 @@ export default function ReviewPage() {
                     return { item, ref: itemRef };
                 });
 
+                // READS MUST COME FIRST
                 const snapshots = await Promise.all(itemOps.map(op => t.get(op.ref)));
 
                 // 3. Write
                 const now = new Date().toISOString();
 
-                // Update Receipt
-                t.set(receiptRef, {
-                    userId: uid,
-                    items: items,
-                    updatedAt: now,
-                    total: items.reduce((sum, item) => sum + (item.unitPrice || 0) * (item.quantity || 1), 0)
-                }, { merge: true });
+                // Write Receipt (Moved to after reads)
+                if (receiptId) {
+                    const receiptRef = doc(db, 'receipts', receiptId);
+                    t.set(receiptRef, {
+                        userId: uid,
+                        items: items,
+                        updatedAt: now,
+                        total: items.reduce((sum, item) => sum + (item.unitPrice || 0) * (item.quantity || 1), 0)
+                    }, { merge: true });
+                }
 
                 // Update Pantry
                 snapshots.forEach((snap, i) => {
@@ -73,7 +84,7 @@ export default function ReviewPage() {
                             quantity: newQty,
                             updatedAt: now,
                             priceHistory: history,
-                            emoji: item.emoji || current.emoji, // Keep existing emoji or use new one
+                            emoji: item.emoji || current.emoji,
                         });
                     } else {
                         t.set(ref, {
@@ -83,14 +94,18 @@ export default function ReviewPage() {
                             unit: item.unit,
                             updatedAt: now,
                             priceHistory: priceEntry ? [priceEntry] : [],
-                            emoji: item.emoji || '📦', // Persist generated emoji or fallback
+                            emoji: item.emoji || '📦',
                         });
                     }
                 });
             });
 
             localStorage.removeItem('currentReceipt');
-            router.push('/dashboard');
+            if (onComplete) {
+                onComplete();
+            } else {
+                router.push('/dashboard');
+            }
         } catch (error: any) {
             console.error(error);
             alert('Failed to save to pantry: ' + error.message);
@@ -105,28 +120,27 @@ export default function ReviewPage() {
         setItems(newItems);
     };
 
-    // ... logic remains same ...
+    const handleAddMoreSuccess = (data: { receiptId: string, items: ItemNorm[] }) => {
+        // Append new items to existing list
+        setItems(prev => [...prev, ...data.items]);
+        // Ideally we might want to link multiple receipt IDs, but for MVP we just keep the session growing
+        setShowAddModal(false);
+    };
 
     if (!items.length && !receiptId) return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-neutral-50 dark:bg-neutral-950">
-            <div className="relative w-24 h-24 mb-6">
-                <div className="absolute inset-0 bg-gradient-to-tr from-green-400 to-emerald-600 rounded-full blur-2xl opacity-40 animate-pulse"></div>
-                <div className="relative bg-white dark:bg-neutral-900 w-full h-full rounded-full flex items-center justify-center shadow-xl border border-neutral-200 dark:border-neutral-800">
-                    <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
-                </div>
-            </div>
-            <h2 className="text-xl font-display font-bold text-neutral-800 dark:text-neutral-200 animate-pulse">Analyzing Receipt...</h2>
-            <p className="text-neutral-500 mt-2">Extracting items, prices, and categories</p>
+        <div className="flex flex-col items-center justify-center p-8 text-neutral-500 animate-pulse">
+            <Loader2 className="w-8 h-8 animate-spin mb-2" />
+            <p>Loading receipt data...</p>
         </div>
     );
 
     if (!items.length && receiptId) return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-neutral-50 dark:bg-neutral-950 text-center">
-            <h2 className="text-2xl font-bold mb-4 text-neutral-800 dark:text-neutral-200">No Items Found</h2>
-            <p className="mb-8 text-neutral-500 max-w-md">Our AI chef couldn't spot any grocery items in that image. Try scanning closer or manually add items.</p>
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+            <h2 className="text-xl font-bold mb-4 text-neutral-800 dark:text-neutral-200">No Items Found</h2>
+            <p className="mb-8 text-neutral-500 max-w-md">Our AI chef couldn't spot any items. Try scanning closer.</p>
             <button
-                onClick={() => router.push('/upload')}
-                className="px-6 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-bold hover:scale-105 transition-all shadow-xl"
+                onClick={onCancel}
+                className="px-6 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-bold"
             >
                 Try Again
             </button>
@@ -134,21 +148,21 @@ export default function ReviewPage() {
     );
 
     return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 pb-32">
-            {/* Ambient Background */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-green-400/10 rounded-full blur-3xl" />
-                <div className="absolute top-[20%] left-[-10%] w-[400px] h-[400px] bg-emerald-600/10 rounded-full blur-3xl" />
+        <div className="bg-neutral-50 dark:bg-neutral-950 pb-32">
+            {/* Ambient Background - LOCALIZED to this div if embedded */}
+            <div className="absolute inset-x-0 top-0 h-[500px] overflow-hidden pointer-events-none -z-10">
+                <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-green-400/10 rounded-full blur-3xl opacity-50" />
+                <div className="absolute top-[20%] left-[-10%] w-[400px] h-[400px] bg-emerald-600/10 rounded-full blur-3xl opacity-50" />
             </div>
 
             <div className="max-w-3xl mx-auto p-4 md:p-8 relative">
                 <header className="mb-8 animate-in slide-in-from-top-4 duration-500">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl md:text-4xl font-display font-extrabold text-neutral-900 dark:text-white flex items-center gap-3">
+                            <h1 className="text-3xl md:text-3xl font-display font-extrabold text-neutral-900 dark:text-white flex items-center gap-3">
                                 Scan Results <span className="text-2xl">✨</span>
                             </h1>
-                            <p className="text-neutral-500 dark:text-neutral-400 mt-1">Review the extracted items before adding to your pantry.</p>
+                            <p className="text-neutral-500 dark:text-neutral-400 mt-1">Review items before adding to pantry.</p>
                         </div>
                     </div>
                 </header>
@@ -226,27 +240,51 @@ export default function ReviewPage() {
                 {/* Floating Action Bar */}
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] md:w-auto backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-800 p-2 rounded-2xl shadow-2xl flex items-center gap-2 animate-in slide-in-from-bottom-10 delay-300 z-50">
                     <button
-                        onClick={() => router.push('/upload')}
-                        className="px-6 py-3 rounded-xl font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all"
+                        onClick={onCancel}
+                        className="px-6 py-3 rounded-xl font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all font-display text-sm md:text-base"
                     >
                         Retake
                     </button>
                     <button
+                        onClick={() => setShowAddModal(true)}
+                        className="px-6 py-3 rounded-xl font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all flex items-center gap-2 border border-emerald-200 dark:border-emerald-800 font-display text-sm md:text-base"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Scan More
+                    </button>
+                    <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
+                        className="px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap font-display text-sm md:text-base"
                     >
                         {loading ? (
                             <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
                             <>
                                 <Save className="w-5 h-5" />
-                                Confirm & Save
+                                Confirm
                             </>
                         )}
                     </button>
                 </div>
             </div>
+
+            {/* Scale-In Modal for Adding More */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-neutral-900 w-full max-w-2xl rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex justify-between items-center bg-neutral-50 dark:bg-neutral-900/50">
+                            <h3 className="font-bold text-lg dark:text-white">Scan Additional Items</h3>
+                            <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-full transition-colors">
+                                <X className="w-5 h-5 text-neutral-500" />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <ReceiptUploader onSuccess={handleAddMoreSuccess} />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

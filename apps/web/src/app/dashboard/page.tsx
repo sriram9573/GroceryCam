@@ -187,7 +187,7 @@ export default function Dashboard() {
                                         <div className="flex items-center gap-2">
                                             <h4 className="font-display font-bold text-neutral-800 dark:text-neutral-100 text-xl capitalize mb-1">{item.name}</h4>
                                         </div>
-                                        <span className="inline-block px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-900/30 text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-900/50">
+                                        <span className="inline-block px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-900/30 text-xs font-bold tracking-wider text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-900/50">
                                             {item.category}
                                         </span>
                                     </div>

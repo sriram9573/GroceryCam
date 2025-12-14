@@ -7,7 +7,11 @@ import { storage } from '@/lib/firebase';
 import { apiClient } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
-export default function ReceiptUploader() {
+interface ReceiptUploaderProps {
+    onSuccess?: (data: { receiptId: string, items: any[] }) => void;
+}
+
+export default function ReceiptUploader({ onSuccess }: ReceiptUploaderProps) {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,16 +41,20 @@ export default function ReceiptUploader() {
                 body: JSON.stringify({ itemsRaw: ocrRes.items, rawText: ocrRes.rawText })
             });
 
-            // 4. Redirect to Review (PASSING STATE VIA URL OR STORE usually, strict query params for now or store)
-            // For simplicity, let's just dump it in LocalStorage or Zustand and redirect
-            // We'll use URL params for simple id or just success? 
-            // Better: Store in Zustand "currentReceipt" and redirect to /upload/review
-            localStorage.setItem('currentReceipt', JSON.stringify({
+            // 4. Output Data
+            const reviewData = {
                 receiptId: ocrRes.receiptId,
                 items: normRes.items
-            }));
+            };
 
-            router.push('/upload/review');
+            // OPTIONAL: Persistence
+            localStorage.setItem('currentReceipt', JSON.stringify(reviewData));
+
+            if (onSuccess) {
+                onSuccess(reviewData);
+            } else {
+                router.push('/upload/review');
+            }
 
         } catch (error) {
             console.error(error);

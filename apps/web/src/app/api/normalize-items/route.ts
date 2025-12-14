@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     }
     
     Rules:
-    - Use common grocery taxonomy for category.
+    - CATEGORY must be one of: "Produce", "Meat & Seafood", "Eggs & Dairy", "Bakery", "Pantry", "Frozen", "Snacks", "Beverages", "Household".
     - "emoji": Select the SINGLE best matching emoji for this *specific* item. (e.g. Mango -> 🥭).
     - "nutrition": ESTIMATE the calories and macros (protein, fat, carbs) for A SINGLE UNIT of this item (e.g. 1 Apple, 1 lb of Chicken). Approximate is fine.
     - INTELLIGENTLY INFER UNITS based on item type if not specified in text:
