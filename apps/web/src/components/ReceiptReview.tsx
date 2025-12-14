@@ -238,16 +238,16 @@ export default function ReceiptReview({ initialItems, initialReceiptId, onCancel
                 </div>
 
                 {/* Floating Action Bar */}
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] md:w-auto backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-800 p-2 rounded-2xl shadow-2xl flex items-center gap-2 animate-in slide-in-from-bottom-10 delay-300 z-50">
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-2xl backdrop-blur-md bg-white/90 dark:bg-neutral-900/90 border border-neutral-200 dark:border-neutral-800 p-3 rounded-2xl shadow-2xl flex flex-col md:flex-row items-stretch md:items-center gap-2 animate-in slide-in-from-bottom-10 delay-300 z-50">
                     <button
                         onClick={onCancel}
-                        className="px-6 py-3 rounded-xl font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all font-display text-sm md:text-base"
+                        className="w-full md:w-auto px-6 py-3 rounded-xl font-bold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all font-display text-sm md:text-base"
                     >
                         Retake
                     </button>
                     <button
                         onClick={() => setShowAddModal(true)}
-                        className="px-6 py-3 rounded-xl font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all flex items-center gap-2 border border-emerald-200 dark:border-emerald-800 font-display text-sm md:text-base"
+                        className="w-full md:w-auto px-6 py-3 rounded-xl font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all flex items-center justify-center gap-2 border border-emerald-200 dark:border-emerald-800 font-display text-sm md:text-base"
                     >
                         <Plus className="w-5 h-5" />
                         Scan More
@@ -255,7 +255,7 @@ export default function ReceiptReview({ initialItems, initialReceiptId, onCancel
                     <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap font-display text-sm md:text-base"
+                        className="w-full md:w-auto px-8 py-3 rounded-xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap font-display text-sm md:text-base"
                     >
                         {loading ? (
                             <Loader2 className="w-5 h-5 animate-spin" />

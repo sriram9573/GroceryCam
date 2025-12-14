@@ -66,7 +66,7 @@ export default function Home() {
 
             <div className="z-10 max-w-lg w-full flex flex-col items-center gap-8 text-center">
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-4">
-                    <h1 className="font-display text-5xl md:text-7xl font-extrabold tracking-tight text-neutral-900">
+                    <h1 className="font-display text-5xl md:text-7xl font-extrabold tracking-tight text-neutral-900 dark:text-white">
                         Grocery<span className="text-gradient">Cam</span>
                     </h1>
                     <p className="text-lg text-neutral-500 max-w-sm mx-auto leading-relaxed">
