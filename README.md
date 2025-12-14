@@ -113,7 +113,3 @@ Instead of manually typing grocery items, users simply snap a photo of their rec
 - [ ] Barcode Scanning integration
 - [ ] Multiple Users / Family Sharing
 - [ ] Shopping List auto-generation from Recipes
-
----
-
-Made with ❤️ by Sriram Reddy
