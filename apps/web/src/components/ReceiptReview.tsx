@@ -120,10 +120,59 @@ export default function ReceiptReview({ initialItems, initialReceiptId, onCancel
         setItems(newItems);
     };
 
+    const deleteItem = (index: number) => {
+        setItems(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const normalizeItemName = (name: string): string => {
+        const lower = name.toLowerCase().trim();
+        // Remove trailing 's' for common plurals
+        if (lower.endsWith('s') && !lower.endsWith('ss') && lower.length > 2) {
+            return lower.slice(0, -1);
+        }
+        return lower;
+    };
+
     const handleAddMoreSuccess = (data: { receiptId: string, items: ItemNorm[] }) => {
-        // Append new items to existing list
-        setItems(prev => [...prev, ...data.items]);
-        // Ideally we might want to link multiple receipt IDs, but for MVP we just keep the session growing
+        console.log('🔍 handleAddMoreSuccess called');
+        console.log('📦 Current items:', items);
+        console.log('📦 New items:', data.items);
+
+        // Merge duplicate items instead of appending
+        setItems(prev => {
+            const merged = [...prev];
+            data.items.forEach(newItem => {
+                const normalizedNew = normalizeItemName(newItem.nameNorm);
+                console.log(`🔍 Processing new item: "${newItem.nameNorm}" → normalized: "${normalizedNew}"`);
+
+                // Find existing item with same name and unit (with plural normalization)
+                const existingIndex = merged.findIndex(
+                    item => {
+                        const normalizedExisting = normalizeItemName(item.nameNorm);
+                        const matches = normalizedExisting === normalizedNew && item.unit === newItem.unit;
+                        console.log(`  Comparing with "${item.nameNorm}" → "${normalizedExisting}", unit: ${item.unit} vs ${newItem.unit}, matches: ${matches}`);
+                        return matches;
+                    }
+                );
+
+                if (existingIndex >= 0) {
+                    console.log(`✅ MERGING! Found match at index ${existingIndex}`);
+                    // Merge: add quantities
+                    merged[existingIndex].quantity += newItem.quantity;
+                    // Average prices if both exist
+                    if (newItem.unitPrice && merged[existingIndex].unitPrice) {
+                        merged[existingIndex].unitPrice =
+                            ((merged[existingIndex].unitPrice || 0) + newItem.unitPrice) / 2;
+                    }
+                } else {
+                    console.log(`❌ NO MATCH - Adding as new item`);
+                    // New item: append
+                    merged.push(newItem);
+                }
+            });
+            console.log('📦 Final merged items:', merged);
+            return merged;
+        });
         setShowAddModal(false);
     };
 
@@ -174,6 +223,15 @@ export default function ReceiptReview({ initialItems, initialReceiptId, onCancel
                             className="group relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:border-emerald-500/30 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards"
                             style={{ animationDelay: `${i * 50}ms` }}
                         >
+                            {/* Delete Button */}
+                            <button
+                                onClick={() => deleteItem(i)}
+                                className="absolute top-3 right-3 p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-all opacity-0 group-hover:opacity-100 z-10"
+                                title="Delete item"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+
                             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                                 {/* Emoji & Name */}
                                 <div className="flex items-center flex-1 w-full md:w-auto gap-4">

@@ -77,7 +77,61 @@ receiptsRouter.post('/normalize-items', async (req: Request, res: Response) => {
             return res.status(500).json({ error: "Failed to normalize items" });
         }
 
-        return res.json({ items: normalizedItems });
+        // Helper function to normalize item names (handle plurals)
+        const normalizeItemName = (name: string): string => {
+            const lower = name.toLowerCase().trim();
+            // Remove trailing 's' for common plurals (simple heuristic)
+            // Avoid removing 's' from words that end in 'ss' (e.g., 'grass')
+            if (lower.endsWith('s') && !lower.endsWith('ss') && lower.length > 2) {
+                return lower.slice(0, -1);
+            }
+            return lower;
+        };
+
+        // Consolidate duplicate items (Problem 3: merge identical items in single scan)
+        const consolidated = new Map<string, any>();
+
+        normalizedItems.forEach((item: any) => {
+            const normalizedName = normalizeItemName(item.nameNorm || 'unknown');
+            const key = `${normalizedName}-${item.unit || 'count'}`;
+
+            if (consolidated.has(key)) {
+                // Merge quantities
+                const existing = consolidated.get(key)!;
+                existing.quantity = (existing.quantity || 1) + (item.quantity || 1);
+
+                // Average prices if both exist
+                if (item.unitPrice && existing.unitPrice) {
+                    const count = existing._priceCount || 1;
+                    existing.unitPrice = ((existing.unitPrice * count) + item.unitPrice) / (count + 1);
+                    existing._priceCount = count + 1;
+                } else if (item.unitPrice) {
+                    existing.unitPrice = item.unitPrice;
+                }
+
+                // Sum line totals if both exist
+                if (item.lineTotal && existing.lineTotal) {
+                    existing.lineTotal += item.lineTotal;
+                } else if (item.lineTotal) {
+                    existing.lineTotal = item.lineTotal;
+                }
+
+                // Keep highest confidence
+                if (item.confidence && existing.confidence) {
+                    existing.confidence = Math.max(existing.confidence, item.confidence);
+                }
+            } else {
+                consolidated.set(key, { ...item, _priceCount: 1 });
+            }
+        });
+
+        // Remove internal tracking fields and convert to array
+        const finalItems = Array.from(consolidated.values()).map(item => {
+            const { _priceCount, ...cleanItem } = item;
+            return cleanItem;
+        });
+
+        return res.json({ items: finalItems });
     } catch (error) {
         console.error('Normalize Route Error:', error);
         return res.status(500).json({ error: 'Failed to normalize items' });

@@ -9,7 +9,25 @@ export const detectText = async (imageUrl: string) => {
         const imageBuffer = await imageResp.arrayBuffer();
 
         const result = await model.generateContent([
-            "List all grocery items in this image. If it's a receipt, extract the text line by line. If it's a real object (like fruit/veg), just name the object. Return plain text list.",
+            `Analyze this image and list all grocery items you see.
+
+IMPORTANT INSTRUCTIONS:
+1. If you see MULTIPLE identical items (e.g., 3 apples, 2 water bottles), COUNT them accurately
+2. For each unique item, specify the QUANTITY you see
+3. If it's a receipt, extract text line by line
+4. If it's real objects (fruits, vegetables, packaged goods), identify and count each item
+5. Be precise with quantities - if you see 3 carrots, say "3 carrots" not just "carrots"
+
+Return a plain text list in this format:
+[quantity] [item name]
+
+Examples:
+- "3 apples"
+- "1 milk carton"  
+- "2 water bottles"
+- "5 bananas"
+
+If quantity is unclear or it's a receipt line item, default to 1.`,
             {
                 inlineData: {
                     data: Buffer.from(imageBuffer).toString('base64'),
