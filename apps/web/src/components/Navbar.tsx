@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Home, ChefHat, LineChart, PlusCircle, LogOut } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { ThemeToggle } from './ThemeToggle';
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -63,6 +64,8 @@ export default function Navbar() {
                             <PlusCircle className="w-6 h-6 md:w-5 md:h-5" />
                             <span className="hidden md:inline font-bold text-sm">Upload</span>
                         </Link>
+
+                        <ThemeToggle />
 
                         <button
                             onClick={handleLogout}

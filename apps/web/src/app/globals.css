@@ -10,13 +10,12 @@
   --background-end-rgb: 255, 255, 255;
 }
 
-/* Force Light Mode variables even in system dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 23, 23, 23;
-    --background-start-rgb: 255, 252, 248;
-    --background-end-rgb: 255, 255, 255;
-  }
+/* Dark Mode overrides via class */
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 10, 10, 10;
+  /* Neutral-950 */
+  --background-end-rgb: 0, 0, 0;
 }
 
 body {
@@ -39,6 +38,14 @@ body {
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 237, 213, 0.5);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark .glass-panel {
+    background-color: rgba(23, 23, 23, 0.8);
+    /* Neutral-900 with opacity */
+    border: 1px solid rgba(64, 64, 64, 0.5);
+    /* Neutral-700 */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
   }
 
   .glass-button {

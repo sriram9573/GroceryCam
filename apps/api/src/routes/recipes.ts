@@ -40,14 +40,37 @@ recipesRouter.post('/recipes', async (req: Request, res: Response) => {
             "ingredients": [{ "name": string, "qty": number, "unit": string, "inStock": boolean }], 
             "steps": string[], 
             "estCost": number, 
-            "cookTimeMin": number 
+            "cookTimeMin": number,
+            "nutrition": { "calories": number, "protein": number, "fat": number, "carbs": number }
         }
         "inStock" should be true if the user has the item in their pantry (fuzzy match), and false if they need to buy it.
         ${strictConstraint}
+        CRITICAL: The 'nutrition' object IS MANDATORY for every recipe. You MUST estimate calories, protein, carbs, and fat based on ingredients.
         Every recipe should use at least one major ingredient from the provided list.
         
         PANTRY_JSON:
         ${JSON.stringify(items)}
+
+        RESPONSE_FORMAT_EXAMPLE:
+        [
+            {
+                "name": "Spicy Mango Chicken",
+                "ingredients": [
+                    { "name": "Mango", "qty": 1, "unit": "count", "inStock": true },
+                    { "name": "Chicken Breast", "qty": 2, "unit": "count", "inStock": true },
+                    { "name": "Chili Flakes", "qty": 1, "unit": "tsp", "inStock": false }
+                ],
+                "steps": ["Dice mango", "Grill chicken", "Mix"],
+                "estCost": 15,
+                "cookTimeMin": 20,
+                "nutrition": { 
+                    "calories": 450, 
+                    "protein": 35, 
+                    "carbs": 40, 
+                    "fat": 15 
+                }
+            }
+        ]
         `;
 
         const recipes = await generateContent(prompt);

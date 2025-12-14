@@ -14,15 +14,24 @@ export const ItemRawSchema = z.object({
     lineTotal: z.number().optional(),
     confidence: z.number().optional(),
 });
+// Nutrition Schema
+export const NutritionSchema = z.object({
+    calories: z.number().optional().default(0),
+    protein: z.number().optional().default(0), // grams
+    carbs: z.number().optional().default(0), // grams
+    fat: z.number().optional().default(0), // grams
+});
 
 export const ItemNormSchema = z.object({
     nameNorm: z.string(),
     category: z.string(),
     quantity: z.number(),
-    unit: z.enum(['count', 'g', 'ml', 'kg', 'l', 'lb', 'oz']), // Expanded units
+    unit: z.enum(['count', 'g', 'ml', 'kg', 'l', 'lb', 'oz']),
     unitPrice: z.number().nullable(),
     lineTotal: z.number().nullable(),
     confidence: z.number(),
+    emoji: z.string().optional(),
+    nutrition: NutritionSchema.optional(),
 });
 
 export const ReceiptSchema = z.object({
@@ -52,6 +61,8 @@ export const PantryItemSchema = z.object({
     unit: z.string(),
     updatedAt: z.string(),
     priceHistory: z.array(PriceHistoryPointSchema).default([]),
+    emoji: z.string().optional(),
+    nutrition: NutritionSchema.optional(),
 });
 
 export const IngredientSchema = z.object({
@@ -69,6 +80,7 @@ export const RecipeSchema = z.object({
     steps: z.array(z.string()),
     estCost: z.number(),
     cookTimeMin: z.number(),
+    nutrition: NutritionSchema, // Mandatory for generated recipes
 });
 
 export type User = z.infer<typeof UserSchema>;

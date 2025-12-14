@@ -8,7 +8,7 @@ import { PantryItem } from '@grocery-cam/shared';
 import { Loader2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { db, auth } from '@/lib/firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import VoiceAssistant from '@/components/VoiceAssistant';
 
 export default function Dashboard() {
@@ -24,7 +24,12 @@ export default function Dashboard() {
                 return;
             }
             // User is logged in, subscribe to pantry
-            const unsubData = onSnapshot(collection(db, 'users', u.uid, 'pantry'),
+            const q = query(
+                collection(db, 'users', u.uid, 'pantry'),
+                orderBy('updatedAt', 'desc')
+            );
+
+            const unsubData = onSnapshot(q,
                 (snap) => {
                     const items = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
                     setPantry(items as PantryItem[]);
@@ -38,12 +43,19 @@ export default function Dashboard() {
             return () => unsubData();
         });
 
-        return () => unsubAuth();
+        // Safety timeout for loading state
+        const timer = setTimeout(() => {
+            if (loading) setLoading(false);
+        }, 3000);
+
+        return () => {
+            unsubAuth();
+            clearTimeout(timer);
+        };
     }, []);
 
     const updateQuantity = async (id: string, current: number, delta: number) => {
         if (!auth.currentUser) return;
-        const { doc, updateDoc, deleteDoc } = await import('firebase/firestore');
         const ref = doc(db, 'users', auth.currentUser.uid, 'pantry', id);
         const newQty = Math.max(0, current + delta);
 
@@ -58,11 +70,16 @@ export default function Dashboard() {
 
     const deleteItem = async (id: string) => {
         if (!auth.currentUser || !confirm('Are you sure you want to delete this item?')) return;
-        const { doc, deleteDoc } = await import('firebase/firestore');
         await deleteDoc(doc(db, 'users', auth.currentUser.uid, 'pantry', id));
     };
 
-    const getCategoryEmoji = (name: string, category: string) => {
+    const updateItemField = async (id: string, field: 'quantity' | 'unit', value: any) => {
+        if (!auth.currentUser) return;
+        const ref = doc(db, 'users', auth.currentUser.uid, 'pantry', id);
+        await updateDoc(ref, { [field]: value });
+    };
+
+    const getCategoryEmoji = (name: string, category: string, dbEmoji?: string) => {
         const n = name.toLowerCase();
         const c = category.toLowerCase();
 
@@ -125,10 +142,10 @@ export default function Dashboard() {
             <main className="max-w-5xl mx-auto p-4 md:pt-12 animate-in fade-in duration-700">
                 <header className="mb-8 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
-                        <h1 className="font-display text-4xl md:text-5xl font-bold text-neutral-900">
+                        <h1 className="font-display text-4xl md:text-5xl font-bold text-neutral-900 dark:text-neutral-50">
                             Hello, <span className="text-gradient">{user?.displayName?.split(' ')[0] || 'Chef'}</span> 👋
                         </h1>
-                        <p className="text-neutral-500 mt-2 text-lg">
+                        <p className="text-neutral-500 dark:text-neutral-400 mt-2 text-lg">
                             Your kitchen is looking great today.
                         </p>
                     </div>
@@ -146,36 +163,38 @@ export default function Dashboard() {
                         <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin" />
                     </div>
                 ) : pantry.length === 0 ? (
-                    <div className="glass-panel p-12 rounded-3xl text-center border-2 border-dashed border-orange-100 flex flex-col items-center gap-4">
-                        <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-2">
+                    <div className="glass-panel dark:glass-panel p-12 rounded-3xl text-center border-2 border-dashed border-orange-100 dark:border-neutral-800 flex flex-col items-center gap-4">
+                        <div className="w-20 h-20 bg-orange-50 dark:bg-orange-500/10 rounded-full flex items-center justify-center mb-2">
                             <img src="https://em-content.zobj.net/source/apple/391/basket_1f9fa.png" alt="Empty Basket" className="w-10 h-10" />
                         </div>
-                        <h3 className="font-display text-2xl font-bold text-neutral-900">Your pantry is empty</h3>
-                        <p className="text-neutral-500 max-w-sm">
+                        <h3 className="font-display text-2xl font-bold text-neutral-900 dark:text-neutral-100">Your pantry is empty</h3>
+                        <p className="text-neutral-500 dark:text-neutral-400 max-w-sm">
                             It looks like you haven't added anything yet. Scan your first receipt to fill it up!
                         </p>
-                        <Link href="/upload" className="mt-4 px-8 py-3 bg-neutral-900 text-white rounded-xl font-bold hover:scale-105 transition-transform shadow-lg">
+                        <Link href="/upload" className="mt-4 px-8 py-3 bg-neutral-900 dark:bg-orange-600 text-white rounded-xl font-bold hover:scale-105 transition-transform shadow-lg">
                             Scan Receipt
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-24">
                         {pantry.map((item) => (
-                            <div key={item.id} className="glass-panel p-6 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-6 group hover:scale-[1.01] transition-all duration-300 border border-orange-50 hover:border-orange-200 hover:shadow-2xl">
+                            <div key={item.id} className="glass-panel dark:glass-panel p-6 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-6 group hover:scale-[1.01] hover:z-20 relative transition-all duration-300 border border-orange-50 dark:border-neutral-800 hover:border-orange-200 dark:hover:border-neutral-700 hover:shadow-2xl">
                                 <div className="flex items-center gap-6">
                                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center text-4xl">
-                                        {getCategoryEmoji(item.name, item.category)}
+                                        {item.emoji || getCategoryEmoji(item.name, item.category)}
                                     </div>
                                     <div>
-                                        <h4 className="font-display font-bold text-neutral-800 text-xl capitalize mb-1">{item.name}</h4>
-                                        <span className="inline-block px-3 py-1 rounded-full bg-orange-50 text-xs font-bold uppercase tracking-wider text-orange-600 border border-orange-100">
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-display font-bold text-neutral-800 dark:text-neutral-100 text-xl capitalize mb-1">{item.name}</h4>
+                                        </div>
+                                        <span className="inline-block px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-900/30 text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-900/50">
                                             {item.category}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto p-4 sm:p-0 bg-orange-50/30 sm:bg-transparent rounded-2xl">
-                                    <div className="flex items-center bg-white border border-neutral-100 rounded-2xl p-1.5 shadow-sm">
+                                <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto p-4 sm:p-0 bg-orange-50/30 dark:bg-neutral-800/50 sm:bg-transparent rounded-2xl">
+                                    <div className="flex items-center bg-white dark:bg-neutral-700/50 border border-neutral-100 dark:border-neutral-700 rounded-2xl p-1.5 shadow-sm">
                                         <button
                                             onClick={() => updateQuantity(item.id!, item.quantity, -1)}
                                             className="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-95"
@@ -183,8 +202,8 @@ export default function Dashboard() {
                                             <span className="text-xl font-bold mb-0.5">−</span>
                                         </button>
                                         <div className="flex flex-col items-center justify-center w-16 px-1">
-                                            <span className="font-display font-bold text-neutral-900 text-lg tabular-nums leading-none">{item.quantity}</span>
-                                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">{item.unit}</span>
+                                            <span className="font-display font-bold text-neutral-900 dark:text-neutral-100 text-lg tabular-nums leading-none">{item.quantity}</span>
+                                            <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">{item.unit}</span>
                                         </div>
                                         <button
                                             onClick={() => updateQuantity(item.id!, item.quantity, 1)}

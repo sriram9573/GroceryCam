@@ -53,10 +53,10 @@ function RecipesContent() {
         <main className="max-w-5xl mx-auto p-4">
             <header className="flex justify-between items-center mb-8">
                 <div>
-                    <h1 className="font-display text-4xl md:text-5xl font-bold text-neutral-900">
+                    <h1 className="font-display text-4xl md:text-5xl font-bold text-neutral-900 dark:text-neutral-50">
                         Smart <span className="text-gradient">Recipes</span> 🍳
                     </h1>
-                    <p className="text-neutral-500 mt-2 text-lg">
+                    <p className="text-neutral-500 dark:text-neutral-400 mt-2 text-lg">
                         Chef-curated meals based on your pantry.
                     </p>
                 </div>
@@ -67,11 +67,11 @@ function RecipesContent() {
                     <div className="bg-orange-50 dark:bg-orange-900/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <ChefHat className="w-8 h-8 text-orange-600" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">Ready to cook?</h3>
-                    <p className="text-gray-500 mb-6">We'll find budget-friendly meals using your pantry.</p>
+                    <h3 className="text-lg font-semibold mb-2 dark:text-neutral-200">Ready to cook?</h3>
+                    <p className="text-gray-500 dark:text-neutral-400 mb-6">We'll find budget-friendly meals using your pantry.</p>
                     <button
                         onClick={generateRecipes}
-                        className="bg-orange-600 text-white px-8 py-3 rounded-full font-bold hover:bg-orange-700 transition"
+                        className="bg-orange-600 text-white px-8 py-3 rounded-full font-bold hover:bg-orange-700 transition shadow-lg hover:shadow-orange-500/20"
                     >
                         Generate Recipes
                     </button>
@@ -87,10 +87,48 @@ function RecipesContent() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {recipes.map((r, i) => (
-                    <div key={i} className="glass-panel p-6 rounded-2xl flex flex-col group hover:scale-[1.01] transition-all duration-300">
+                    <div key={i} className="glass-panel dark:glass-panel p-6 rounded-2xl flex flex-col group hover:scale-[1.01] transition-all duration-300 relative z-10 hover:z-50">
                         <div className="flex justify-between items-start mb-4">
-                            <h3 className="font-display text-2xl font-bold text-neutral-800 leading-tight">{r.name}</h3>
-                            <div className="flex gap-2 text-xs font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2 py-1 rounded-lg">
+                            <h3 className="font-display text-2xl font-bold text-neutral-800 dark:text-neutral-100 leading-tight pr-8 relative">
+                                {r.name}
+                                {(() => {
+                                    // Fallback to ensure icon always shows (simulated data if missing)
+                                    const nutrition = r.nutrition || { calories: 0, protein: 0, carbs: 0, fat: 0 };
+                                    return (
+                                        <span className="inline-block ml-2 align-middle transform -translate-y-1 relative group/info z-20">
+                                            <div className="w-6 h-6 rounded-full bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center text-xs font-bold ring-1 ring-orange-200 dark:ring-orange-800 cursor-help hover:bg-orange-100 dark:hover:bg-orange-900/50 hover:scale-110 transition-all shadow-sm">
+                                                i
+                                            </div>
+                                            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 w-64 shadow-xl opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-300 transform group-hover/info:translate-y-0 text-left font-sans font-normal">
+                                                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white dark:bg-neutral-800 border-t border-l border-neutral-200 dark:border-neutral-700 rotate-45"></div>
+                                                <div className="flex items-center justify-between mb-3 border-b border-neutral-100 dark:border-neutral-700 pb-2 relative z-10">
+                                                    <span className="font-display font-bold text-neutral-800 dark:text-neutral-100 text-sm">Nutrition Facts</span>
+                                                    <span className="text-[10px] uppercase font-bold text-neutral-400 dark:text-neutral-500 tracking-wider">Per Serv</span>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3 relative z-10">
+                                                    <div className="bg-neutral-50 dark:bg-neutral-700/50 rounded-xl p-2.5 flex flex-col items-center border border-neutral-100 dark:border-neutral-700 transition-colors">
+                                                        <span className="text-neutral-900 dark:text-neutral-50 font-bold text-lg leading-none mb-0.5">{nutrition.calories}</span>
+                                                        <span className="text-[10px] font-bold text-orange-500 dark:text-orange-400 uppercase tracking-tight">Calories</span>
+                                                    </div>
+                                                    <div className="bg-neutral-50 dark:bg-neutral-700/50 rounded-xl p-2.5 flex flex-col items-center border border-neutral-100 dark:border-neutral-700 transition-colors">
+                                                        <span className="text-neutral-900 dark:text-neutral-50 font-bold text-lg leading-none mb-0.5">{nutrition.protein}g</span>
+                                                        <span className="text-[10px] font-bold text-blue-500 dark:text-blue-400 uppercase tracking-tight">Protein</span>
+                                                    </div>
+                                                    <div className="bg-neutral-50 dark:bg-neutral-700/50 rounded-xl p-2.5 flex flex-col items-center border border-neutral-100 dark:border-neutral-700 transition-colors">
+                                                        <span className="text-neutral-900 dark:text-neutral-50 font-bold text-lg leading-none mb-0.5">{nutrition.carbs}g</span>
+                                                        <span className="text-[10px] font-bold text-green-500 dark:text-green-400 uppercase tracking-tight">Carbs</span>
+                                                    </div>
+                                                    <div className="bg-neutral-50 dark:bg-neutral-700/50 rounded-xl p-2.5 flex flex-col items-center border border-neutral-100 dark:border-neutral-700 transition-colors">
+                                                        <span className="text-neutral-900 dark:text-neutral-50 font-bold text-lg leading-none mb-0.5">{nutrition.fat}g</span>
+                                                        <span className="text-[10px] font-bold text-yellow-600 dark:text-yellow-500 uppercase tracking-tight">Fats</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </span>
+                                    );
+                                })()}
+                            </h3>
+                            <div className="flex gap-2 text-xs font-bold uppercase tracking-wider text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-lg shrink-0 mt-1 dark:text-orange-400 border border-orange-100 dark:border-orange-900/50">
                                 <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {r.cookTimeMin}m</span>
                             </div>
                         </div>
@@ -98,12 +136,13 @@ function RecipesContent() {
                         <div className="mb-6">
                             <div className="flex flex-wrap gap-2">
                                 {r.ingredients.map((ing, j) => (
-                                    <span key={j} className={`text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1 border ${ing.inStock
-                                        ? 'bg-green-50 text-green-700 border-green-100'
-                                        : 'bg-red-50 text-red-700 border-red-100'
-                                        }`}>
-                                        {!ing.inStock && <span className="font-bold text-red-600">!</span>}
-                                        {ing.name} ({ing.qty} {ing.unit})
+                                    <span key={j} className="text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 border shadow-sm transition-all hover:shadow-md cursor-default"
+                                        style={{
+                                            background: ing.inStock ? 'linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%)' : 'linear-gradient(135deg, #fff1f2 0%, #ffffff 100%)',
+                                            borderColor: ing.inStock ? '#10b981' : '#f43f5e',
+                                            color: ing.inStock ? '#047857' : '#be123c',
+                                        }}>
+                                        {ing.name} <span className="opacity-80 font-medium" style={{ color: 'inherit' }}>({ing.qty} {ing.unit})</span>
                                     </span>
                                 ))}
                             </div>
@@ -123,11 +162,11 @@ function RecipesContent() {
                             )}
                         </div>
 
-                        <div className="mt-auto pt-6 border-t border-neutral-100">
-                            <h4 className="font-bold text-xs uppercase tracking-wider text-neutral-400 mb-3">Instructions</h4>
+                        <div className="mt-auto pt-6 border-t border-neutral-100 dark:border-neutral-800">
+                            <h4 className="font-bold text-xs uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-3">Instructions</h4>
                             <ol className="list-decimal list-outside ml-4 space-y-2">
                                 {r.steps.map((step, k) => (
-                                    <li key={k} className="text-neutral-600 text-sm leading-relaxed pl-1">{step}</li>
+                                    <li key={k} className="text-neutral-600 dark:text-neutral-300 text-sm leading-relaxed pl-1">{step}</li>
                                 ))}
                             </ol>
                         </div>

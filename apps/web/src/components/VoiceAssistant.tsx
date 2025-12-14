@@ -187,6 +187,7 @@ export default function VoiceAssistant() {
                     // Update existing
                     const docRef = doc(db, 'users', uid, 'pantry', existingDoc.id);
                     const currentQty = existingDoc.data().quantity || 0;
+                    // Optionally update emoji if missing?
                     await updateDoc(docRef, { quantity: currentQty + quantity });
                 } else {
                     // Create new
@@ -195,6 +196,7 @@ export default function VoiceAssistant() {
                         quantity,
                         unit: unit || 'count',
                         category: category || 'General', // Use inferred category or fallback
+                        emoji: (item as any).emoji || '📦', // Helper to use the generated emoji
                         updatedAt: new Date().toISOString()
                     });
                 }

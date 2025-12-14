@@ -72,7 +72,8 @@ export default function ReviewPage() {
                         t.update(ref, {
                             quantity: newQty,
                             updatedAt: now,
-                            priceHistory: history
+                            priceHistory: history,
+                            emoji: item.emoji || current.emoji, // Keep existing emoji or use new one
                         });
                     } else {
                         t.set(ref, {
@@ -81,7 +82,8 @@ export default function ReviewPage() {
                             quantity: item.quantity,
                             unit: item.unit,
                             updatedAt: now,
-                            priceHistory: priceEntry ? [priceEntry] : []
+                            priceHistory: priceEntry ? [priceEntry] : [],
+                            emoji: item.emoji || '📦', // Persist generated emoji or fallback
                         });
                     }
                 });

@@ -17,10 +17,21 @@ export async function POST(req: Request) {
         const prompt = `
     You are a grocery product normalizer. Convert noisy OCR line items into normalized JSON.
     Output array only. For each line, return:
-    { "nameNorm": string, "category": string, "quantity": number, "unit": "count"|"g"|"ml"|"kg"|"l"|"lb"|"oz", "unitPrice": number|null, "lineTotal": number|null, "confidence": 0..1 }
+    { 
+        "nameNorm": string, 
+        "category": string, 
+        "quantity": number, 
+        "unit": "count"|"g"|"ml"|"kg"|"l"|"lb"|"oz", 
+        "unitPrice": number|null, 
+        "lineTotal": number|null, 
+        "confidence": 0..1, 
+        "emoji": string
+    }
     
     Rules:
     - Use common grocery taxonomy for category.
+    - "emoji": Select the SINGLE best matching emoji for this *specific* item. (e.g. Mango -> 🥭).
+    - "nutrition": ESTIMATE the calories and macros (protein, fat, carbs) for A SINGLE UNIT of this item (e.g. 1 Apple, 1 lb of Chicken). Approximate is fine.
     - INTELLIGENTLY INFER UNITS based on item type if not specified in text:
         - Meat/Poultry (Chicken, Beef, Pork) -> DEFAULT TO "lb" (NOT count).
         - Liquids (Milk, Juice) -> DEFAULT TO "gallon" or "liter" (if large) or "fl oz".

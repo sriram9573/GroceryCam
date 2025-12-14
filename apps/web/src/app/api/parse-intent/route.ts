@@ -32,7 +32,9 @@ export async function POST(req: Request) {
                     "name": string, 
                     "quantity": number, 
                     "unit": string,
-                    "category": string // Infer best category e.g. "Produce", "Dairy", "Meat", "Bakery", "Beverages", "Snacks", "Other"
+                    "category": string, // Infer best category
+                    "emoji": string, // Best matching emoji
+                    "nutrition": { "calories": number, "protein": number, "fat": number, "carbs": number } // Estimate per unit
                 }
             ],
             "query": string | null, // For GENERATE_RECIPES (e.g. "Butter Chicken")
