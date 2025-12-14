@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 import { ThemeProvider } from '@/components/ThemeProvider';
+import VoiceAssistant from '@/components/VoiceAssistant';
 
 export default function RootLayout({
     children,
@@ -28,6 +29,7 @@ export default function RootLayout({
                 >
                     <div className="min-h-screen text-neutral-900 bg-white dark:bg-neutral-950 dark:text-neutral-50 transition-colors duration-300">
                         {children}
+                        <VoiceAssistant />
                     </div>
                 </ThemeProvider>
             </body>

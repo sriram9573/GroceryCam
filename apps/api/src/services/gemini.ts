@@ -3,9 +3,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-// Use a model that supports JSON mode if possible, or just standard Flash
-// Use the experimental model which is often more accessible for free keys
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp', generationConfig: { responseMimeType: "application/json" } });
+// Use standard Flash model for speed and reliability
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash', generationConfig: { responseMimeType: "application/json" } });
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

@@ -9,13 +9,83 @@ import { useSearchParams } from 'next/navigation';
 
 import { Suspense } from 'react';
 
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, getDocs } from 'firebase/firestore';
+
 function RecipesContent() {
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     const [loading, setLoading] = useState(false);
     const searchParams = useSearchParams();
     const autoGenerate = searchParams.get('auto');
+    const [user, setUser] = useState<any>(null);
 
     const [progress, setProgress] = useState(0);
+
+    // Auth Listener
+    useEffect(() => {
+        const unsub = onAuthStateChanged(auth, (u) => {
+            setUser(u);
+        });
+        return () => unsub();
+    }, []);
+
+    const initialized = useRef(false);
+
+    // Auto-Generate Effect
+    useEffect(() => {
+        if (!initialized.current && autoGenerate === 'true' && user && recipes.length === 0 && !loading) {
+            initialized.current = true;
+            generateRecipes();
+        }
+    }, [autoGenerate, user]); // Run when user is confirmed
+
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    const generateRecipes = async () => {
+        if (!user) return;
+
+        // Cancel previous request if any
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+
+        setLoading(true);
+        try {
+            // Fetch pantry items
+            const snap = await getDocs(collection(db, 'users', user.uid, 'pantry'));
+            const items = snap.docs.map(d => ({ name: d.data().name, qty: d.data().quantity, unit: d.data().unit }));
+
+            const res = await apiClient('/recipes', {
+                method: 'POST',
+                body: JSON.stringify({ items, query: searchParams.get('query') }),
+                signal: controller.signal
+            });
+            setRecipes(res.recipes);
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                console.log('Recipe generation cancelled');
+            } else {
+                console.error(error);
+            }
+        } finally {
+            if (abortControllerRef.current === controller) {
+                setLoading(false);
+                abortControllerRef.current = null;
+            }
+        }
+    };
+
+    const cancelGeneration = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+        setLoading(false);
+    };
 
     useEffect(() => {
         let progressInterval: NodeJS.Timeout;
@@ -42,40 +112,6 @@ function RecipesContent() {
             clearInterval(progressInterval);
         };
     }, [loading]);
-
-    const initialized = useRef(false);
-
-    useEffect(() => {
-        if (!initialized.current && autoGenerate === 'true' && recipes.length === 0 && !loading) {
-            initialized.current = true;
-            generateRecipes();
-        }
-    }, [autoGenerate]);
-
-    const generateRecipes = async () => {
-        setLoading(true);
-        try {
-            // Fetch pantry items locally first
-            const { db, auth } = await import('@/lib/firebase');
-            const { collection, getDocs } = await import('firebase/firestore');
-
-            if (!auth.currentUser) return;
-
-            const snap = await getDocs(collection(db, 'users', auth.currentUser.uid, 'pantry'));
-            const items = snap.docs.map(d => ({ name: d.data().name, qty: d.data().quantity, unit: d.data().unit }));
-
-            const res = await apiClient('/recipes', {
-                method: 'POST',
-                body: JSON.stringify({ items, query: searchParams.get('query') })
-            });
-            setRecipes(res.recipes);
-        } catch (error) {
-            console.error(error);
-            // alert('Failed to generate recipes'); // Removed annoying alert
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <main className="max-w-5xl mx-auto p-4">
@@ -128,12 +164,19 @@ function RecipesContent() {
                         </p>
                     </div>
 
-                    <div className="w-64 h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full mx-auto mt-6 overflow-hidden relative">
+                    <div className="w-64 h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full mx-auto mt-6 overflow-hidden relative mb-6">
                         <div
                             className="h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full transition-all duration-100 ease-out"
                             style={{ width: `${progress}%` }}
                         ></div>
                     </div>
+
+                    <button
+                        onClick={cancelGeneration}
+                        className="text-sm font-bold text-neutral-400 hover:text-red-500 transition-colors px-4 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                        Cancel
+                    </button>
                 </div>
             )}
 

@@ -9,7 +9,7 @@ import { Loader2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { db, auth } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import VoiceAssistant from '@/components/VoiceAssistant';
+
 
 export default function Dashboard() {
     const user = useStore(s => s.user);
@@ -226,7 +226,6 @@ export default function Dashboard() {
                     </div>
                 )}
             </main>
-            <VoiceAssistant />
         </div>
     );
 }

@@ -1,87 +1,63 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Mic, Loader2, X, Keyboard } from 'lucide-react';
+import { Mic, Loader2, Send, MessageSquare, X } from 'lucide-react';
 import { apiClient } from '@/lib/api';
 import { db, auth } from '@/lib/firebase';
-import { collection, addDoc, query, where, getDocs, deleteDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, updateDoc, doc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import ChatInterface, { Message } from './ChatInterface';
 
 export default function VoiceAssistant() {
     const [listening, setListening] = useState(false);
     const [processing, setProcessing] = useState(false);
-    const [feedback, setFeedback] = useState<string | null>(null);
     const [partialTranscript, setPartialTranscript] = useState('');
-    const [showInput, setShowInput] = useState(false);
     const [textInput, setTextInput] = useState('');
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [showChat, setShowChat] = useState(false);
+
     const recognitionRef = useRef<any>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     const [hasVoice, setHasVoice] = useState(false);
-    const [lastContext, setLastContext] = useState<string | null>(null);
-    const [processedIndex, setProcessedIndex] = useState(0); // Added for continuous mode
-
-    // Add a Ref for context to solve stale closure in useEffect
-    const contextRef = useRef<string | null>(null);
-
-    // Update ref when state changes (if we set it elsewhere)
-    useEffect(() => { contextRef.current = lastContext; }, [lastContext]);
 
     useEffect(() => {
         if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
             // @ts-ignore
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const speech = new SpeechRecognition();
-            speech.continuous = true; // Keep mic open
+            speech.continuous = true;
             speech.lang = 'en-US';
             speech.interimResults = true;
 
             speech.onstart = () => {
                 setListening(true);
-                setFeedback("Start speaking...");
                 setPartialTranscript("");
             };
 
             speech.onend = () => {
-                // Only effectively stop if we decided to stop (not just silence)
-                // But in continuous mode, it might stop on network error or timeout.
-                // We'll let the UI reflect that.
                 setListening(false);
             };
 
             speech.onresult = async (event: any) => {
-                let interim = '';
-                let final = '';
-
-                // We only care about new results we haven't processed
-                // But React state in callback is stale. We need a ref or robust idx tracking.
-                // For simplicity in this functional component without refs for all state, 
-                // we'll process the *last* final result.
-
                 const resultsLength = event.results.length;
                 const latestResult = event.results[resultsLength - 1];
 
                 if (latestResult.isFinal) {
-                    final = latestResult[0].transcript.trim();
-                    // Avoid reprocessing same index if possible, or just debounce?
-                    // Rely on processing flag.
+                    const final = latestResult[0].transcript.trim();
                     console.log("Final Heard:", final);
                     handleCommand(final, speech);
                 } else {
-                    interim = latestResult[0].transcript;
+                    setPartialTranscript(latestResult[0].transcript);
                 }
-
-                if (interim) setPartialTranscript(interim);
             };
 
             speech.onerror = (event: any) => {
                 console.error("Speech Error:", event.error);
                 if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                    setFeedback(" mic access denied. Using text.");
                     setHasVoice(false);
                     setListening(false);
                 }
-                // Don't stop on 'no-speech', just keep listening or let it timeout
             };
 
             recognitionRef.current = speech;
@@ -90,177 +66,194 @@ export default function VoiceAssistant() {
             console.warn("Voice API not supported");
             setHasVoice(false);
         }
-    }, []); // Check deps? Empty is fine for setup.
+    }, []);
 
-    // Updated handleCommand to accept speech instance for control
-    const handleCommand = async (text: string, speechInstance: any) => {
-        if (!text) return;
+    // Text-to-Speech function with female voice
+    const speak = (text: string) => {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
 
-        // Prevent overlapping processing
-        // Note: processing state here might be stale in the closure of onresult
-        // But we can check a ref if needed. For now assume linear flow.
+            // Clean text for speech: remove emojis and Markdown stars
+            const cleanText = text
+                .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '')
+                .replace(/\*/g, '')
+                .trim();
 
-        setProcessing(true);
-        setFeedback(`Processing: "${text}"...`);
-        setPartialTranscript("");
-        setShowInput(false);
-        setTextInput('');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
 
-        let isClarification = false;
+            const voices = window.speechSynthesis.getVoices();
+            const femaleVoice = voices.find(voice =>
+                voice.name.includes('Female') ||
+                voice.name.includes('Samantha') ||
+                voice.name.includes('Victoria') ||
+                voice.name.includes('Google UK English Female') ||
+                voice.name.includes('Microsoft Zira')
+            ) || voices.find(voice => voice.lang.startsWith('en'));
 
-        try {
-            // Use functional state update to get latest context if needed, 
-            // but here we are in a closure. Ideally use a Ref for lastContext.
-            // ... Actually `lastContext` is stale here! 
-            // We need a Ref for context to work in this closure.
-
-            // FIX: Using Ref for context
-            const ctxPayload = contextRef.current;
-
-            const res = await apiClient('/parse-intent', {
-                method: 'POST',
-                body: JSON.stringify({ text, previousContext: ctxPayload })
-            });
-
-            console.log("Intent:", res);
-
-            if (!res || !res.intent || res.intent === 'UNKNOWN') {
-                setFeedback("I didn't understand that.");
-                // If unknown, we might want to keep listening or stop?
-                // Let's stop to reset.
-                speechInstance.stop();
-                setTimeout(() => setFeedback(null), 3000);
-                return;
+            if (femaleVoice) {
+                utterance.voice = femaleVoice;
             }
 
-            if (res.intent !== 'ASK_CLARIFICATION') {
-                setLastContext(null);
-                contextRef.current = null;
-                // Intent fulfilled, STOP listening
-                speechInstance.stop();
-            } else {
-                if (!ctxPayload) {
-                    setLastContext(text);
-                    contextRef.current = text;
-                }
-                isClarification = true;
-                // DO NOT STOP MIC. Keep listening for answer.
-            }
+            utterance.rate = 1.05; // Slightly faster for more natural flow
+            utterance.pitch = 1.1; // Slightly higher pitch for friendliness
+            utterance.volume = 1.0;
 
-            await executeAction(res);
-
-        } catch (error) {
-            console.error(error);
-            setFeedback("Error processing command.");
-            speechInstance.stop();
-        } finally {
-            setProcessing(false);
-            if (!isClarification) {
-                setTimeout(() => setFeedback(null), 4000);
-            }
-            // Do not overwrite feedback for clarification. The question set in executeAction is what we want.
+            // Speak
+            window.speechSynthesis.speak(utterance);
         }
     };
 
-    const executeAction = async (action: any) => {
-        if (!auth.currentUser) return;
+    const handleCommand = async (text: string, speechInstance?: any) => {
+        if (!text) return;
+
+        // Add user message to chat
+        const userMessage: Message = {
+            role: 'user',
+            content: text,
+            timestamp: new Date()
+        };
+        setMessages(prev => [...prev, userMessage]);
+
+        setProcessing(true);
+        setPartialTranscript("");
+        setTextInput('');
+
+        try {
+            const res = await apiClient('/parse-intent', {
+                method: 'POST',
+                body: JSON.stringify({
+                    text,
+                    conversationHistory: messages.slice(-10) // Last 10 messages for context
+                })
+            });
+
+            console.log("AI Response:", res);
+
+            // Check if response has the required fields
+            if (!res) {
+                throw new Error('No response from server');
+            }
+
+            // Use the response field from the AI
+            const responseText = res.response || "I'm here to help! What would you like to do?";
+
+            // Add AI response to chat
+            const aiMessage: Message = {
+                role: 'assistant',
+                content: responseText,
+                timestamp: new Date(),
+                suggestions: res.suggestions
+            };
+            setMessages(prev => [...prev, aiMessage]);
+
+            // Speak response (cleaned)
+            speak(responseText);
+
+            // Execute action if needed
+            await executeAction(res, recognitionRef.current);
+
+        } catch (error: any) {
+            console.error(error);
+            const errorMessage: Message = {
+                role: 'assistant',
+                content: error.message || "Sorry, I'm having trouble connecting. Please try again.",
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, errorMessage]);
+            speak("Sorry, I encountered an error.");
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const executeAction = async (action: any, speechInstance: any) => {
+        if (!auth.currentUser) {
+            console.error("No authenticated user found");
+            throw new Error("You must be logged in to perform actions.");
+        }
+
         const uid = auth.currentUser.uid;
         const pantryRef = collection(db, 'users', uid, 'pantry');
 
-        if (action.intent === 'ADD_ITEM') {
-            const itemsToAdd = action.items || (action.item ? [action.item] : []);
-            let successCount = 0;
+        // Stop mic for completed actions, keep it on for clarifications
+        const shouldKeepMicOn = ['ASK_CLARIFICATION', 'CONFIRM_UNCLEAR', 'GREETING', 'SMALL_TALK', 'APP_INFO', 'GENERAL_RESPONSE'].includes(action.intent);
 
-            for (const item of itemsToAdd) {
-                const { name, quantity, unit, category } = item;
+        if (!shouldKeepMicOn) {
+            speechInstance?.stop();
+        }
 
-                // Fuzzy match logic
-                const snap = await getDocs(pantryRef);
-                const targetName = name.toLowerCase().trim();
+        try {
+            if (action.intent === 'ADD_ITEM' && action.items) {
+                for (const item of action.items) {
+                    if (!item.name) continue;
 
-                const existingDoc = snap.docs.find(d => {
-                    const data = d.data();
-                    return data.name?.toLowerCase().trim() === targetName;
-                });
+                    const { name, quantity, unit } = item;
+                    const snap = await getDocs(pantryRef);
+                    const targetName = name.toLowerCase().trim();
 
-                if (existingDoc) {
-                    // Update existing
-                    const docRef = doc(db, 'users', uid, 'pantry', existingDoc.id);
-                    const currentQty = existingDoc.data().quantity || 0;
-                    // Optionally update emoji if missing?
-                    await updateDoc(docRef, { quantity: currentQty + quantity });
-                } else {
-                    // Create new
-                    await addDoc(pantryRef, {
-                        name, // Use the name from voice command if new
-                        quantity,
-                        unit: unit || 'count',
-                        category: category || 'General', // Use inferred category or fallback
-                        emoji: (item as any).emoji || '📦', // Helper to use the generated emoji
-                        updatedAt: new Date().toISOString()
+                    const existingDoc = snap.docs.find(d => {
+                        const data = d.data();
+                        return data.name?.toLowerCase().trim() === targetName;
                     });
-                }
-                successCount++;
-            }
 
-            if (successCount > 0) {
-                // Summarize feedback
-                if (itemsToAdd.length === 1) {
-                    setFeedback(`Added ${itemsToAdd[0].quantity} ${itemsToAdd[0].name}(s).`);
-                } else {
-                    setFeedback(`Added ${itemsToAdd.length} items to pantry.`);
-                }
-            }
-        }
-        else if (action.intent === 'REMOVE_ITEM') {
-            const itemsToRemove = action.items || (action.item ? [action.item] : []);
-            let removedCount = 0;
-
-            for (const item of itemsToRemove) {
-                const { name, quantity } = item;
-
-                const snap = await getDocs(pantryRef);
-                const targetName = name.toLowerCase().trim();
-
-                const existingDoc = snap.docs.find(d => {
-                    const data = d.data();
-                    return data.name?.toLowerCase().trim() === targetName;
-                });
-
-                if (existingDoc) {
-                    const docRef = doc(db, 'users', uid, 'pantry', existingDoc.id);
-                    const currentQty = existingDoc.data().quantity;
-                    const newQty = Math.max(0, currentQty - quantity);
-
-                    if (newQty === 0) {
-                        await deleteDoc(docRef);
+                    if (existingDoc) {
+                        const docRef = doc(db, 'users', uid, 'pantry', existingDoc.id);
+                        const currentQty = existingDoc.data().quantity || 0;
+                        await updateDoc(docRef, { quantity: currentQty + (quantity || 1) });
                     } else {
-                        await updateDoc(docRef, { quantity: newQty });
+                        await addDoc(pantryRef, {
+                            name,
+                            quantity: quantity || 1,
+                            unit: unit || 'count',
+                            category: item.category || 'General',
+                            emoji: item.emoji || '📦',
+                            updatedAt: new Date().toISOString()
+                        });
                     }
-                    removedCount++;
                 }
             }
+            else if (action.intent === 'REMOVE_ITEM' && action.items) {
+                for (const item of action.items) {
+                    if (!item.name) continue;
 
-            if (removedCount > 0) {
-                if (itemsToRemove.length === 1) {
-                    setFeedback(`Removed ${itemsToRemove[0].name}.`);
-                } else {
-                    setFeedback(`Updated ${removedCount} items.`);
+                    const { name, quantity } = item;
+                    const snap = await getDocs(pantryRef);
+                    const targetName = name.toLowerCase().trim();
+
+                    const existingDoc = snap.docs.find(d => {
+                        const data = d.data();
+                        return data.name?.toLowerCase().trim() === targetName;
+                    });
+
+                    if (existingDoc) {
+                        const docRef = doc(db, 'users', uid, 'pantry', existingDoc.id);
+                        const currentQty = existingDoc.data().quantity;
+                        const newQty = Math.max(0, currentQty - (quantity || 1));
+
+                        if (newQty === 0) {
+                            await deleteDoc(docRef);
+                        } else {
+                            await updateDoc(docRef, { quantity: newQty });
+                        }
+                    }
                 }
-            } else {
-                setFeedback("Could not find item(s) to remove.");
             }
-        }
-        else if (action.intent === 'ASK_CLARIFICATION') {
-            const question = action.question || "Do you have a specific dish in mind?";
-            setFeedback(question);
-            // Mic is ALREADY ON (Continuous Mode).
-            // Just updated UI text.
-        }
-        else if (action.intent === 'GENERATE_RECIPES') {
-            const queryParam = action.query ? `&query=${encodeURIComponent(action.query)}` : '';
-            setFeedback("Generating ideas...");
-            router.push(`/recipes?auto=true${queryParam}`);
+            else if (action.intent === 'GENERATE_RECIPES') {
+                const queryParam = action.query ? `&query=${encodeURIComponent(action.query)}` : '';
+                router.push(`/recipes?auto=true${queryParam}`);
+                setShowChat(false); // Close chat to show recipes
+            }
+            else if (action.intent === 'VIEW_PANTRY') {
+                router.push('/dashboard');
+                setShowChat(false); // Close chat to see items
+            }
+            else if (action.intent === 'SCAN_RECEIPT') {
+                router.push('/upload');
+                setShowChat(false);
+            }
+        } catch (dbError: any) {
+            console.error("Database Action Error:", dbError);
+            throw new Error(`Database error: ${dbError.message}`);
         }
     };
 
@@ -268,74 +261,107 @@ export default function VoiceAssistant() {
         if (hasVoice) {
             if (listening) {
                 recognitionRef.current?.stop();
-                setFeedback("Stopped.");
             } else {
                 try {
-                    // Reset processed state if needed?
+                    setShowChat(true);
                     recognitionRef.current?.start();
                 } catch (e) { console.error(e); }
             }
         } else {
-            setShowInput(prev => !prev);
+            setShowChat(true);
             setTimeout(() => inputRef.current?.focus(), 100);
         }
+    };
+
+    const handleSuggestionClick = (text: string) => {
+        handleCommand(text);
     };
 
     const handleTextSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (textInput.trim()) {
-            handleCommand(textInput, { stop: () => { } }); // Mock speech object for text
+            handleCommand(textInput);
+        }
+    };
+
+    const toggleChat = () => {
+        setShowChat(!showChat);
+        if (listening) {
+            recognitionRef.current?.stop();
         }
     };
 
     return (
-        <div className="fixed bottom-6 right-6 flex flex-col items-end gap-2 z-50">
-            {/* Live Caption Bubble */}
-            {listening && (
-                <div className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm mb-1 shadow-lg animate-in fade-in slide-in-from-bottom-4">
-                    <p className="font-bold text-xs uppercase opacity-75 mb-1">Listening...</p>
-                    <p className="italic">"{partialTranscript}"</p>
-                </div>
-            )}
-
-            {/* Feedback / Processing Bubble - Always show if present */}
-            {feedback && (
-                <div className="bg-black/80 text-white px-4 py-2 rounded-lg text-sm mb-2 shadow-lg backdrop-blur animate-in slide-in-from-bottom-2 fade-in">
-                    {feedback}
-                </div>
-            )}
-
-            {showInput && (
-                <form onSubmit={handleTextSubmit} className="mb-2 flex gap-2">
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={textInput}
-                        onChange={(e) => setTextInput(e.target.value)}
-                        placeholder="Type command..."
-                        className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 shadow-lg w-64 focus:outline-none focus:ring-2 focus:ring-orange-500"
+        <div className="fixed bottom-6 right-6 flex flex-col items-end gap-4 z-50">
+            {/* Chat Overlay */}
+            {showChat && (
+                <div className="fixed inset-x-0 bottom-24 mx-4 md:right-6 md:left-auto md:w-[400px] z-40 animate-in slide-in-from-bottom-10 fade-in duration-300">
+                    <ChatInterface
+                        messages={messages}
+                        isTyping={processing}
+                        onSuggestionClick={handleSuggestionClick}
                     />
-                    <button type="button" onClick={() => setShowInput(false)} className="bg-gray-200 dark:bg-gray-700 p-2 rounded-full"><X className="w-4 h-4" /></button>
-                </form>
+
+                    {/* Input Area */}
+                    <div className="mt-2 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-3">
+                        {listening && (
+                            <div className="mb-2 bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 px-3 py-2 rounded-lg text-sm">
+                                <p className="font-bold text-xs uppercase opacity-75 mb-1">Listening...</p>
+                                <p className="italic">"{partialTranscript}"</p>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleTextSubmit} className="flex gap-2">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={textInput}
+                                onChange={(e) => setTextInput(e.target.value)}
+                                placeholder="Type your message..."
+                                className="flex-1 bg-neutral-100 dark:bg-neutral-800 border-none rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                disabled={processing}
+                            />
+                            <button
+                                type="submit"
+                                disabled={!textInput.trim() || processing}
+                                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-2.5 rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Send className="w-5 h-5" />
+                            </button>
+                        </form>
+                    </div>
+                </div>
             )}
 
-            <button
-                onClick={toggleListening}
-                className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all ${listening
-                    ? 'bg-red-500 animate-pulse ring-4 ring-red-200'
-                    : processing
-                        ? 'bg-orange-400'
-                        : 'bg-orange-600 hover:bg-orange-700 hover:scale-105'
-                    } text-white`}
-            >
-                {processing ? (
-                    <Loader2 className="animate-spin" />
-                ) : hasVoice ? (
-                    <Mic className="w-6 h-6" />
-                ) : (
-                    <Keyboard className="w-6 h-6" />
+            {/* Floating Action Buttons */}
+            <div className="flex gap-2">
+                {showChat && (
+                    <button
+                        onClick={toggleChat}
+                        className="w-12 h-12 rounded-full bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 flex items-center justify-center shadow-lg transition-all"
+                    >
+                        <X className="w-5 h-5 text-neutral-700 dark:text-neutral-300" />
+                    </button>
                 )}
-            </button>
+
+                <button
+                    onClick={showChat ? toggleListening : toggleChat}
+                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-xl transition-all ${listening
+                        ? 'bg-red-500 animate-pulse ring-4 ring-red-200'
+                        : processing
+                            ? 'bg-orange-400'
+                            : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-105'
+                        } text-white`}
+                >
+                    {processing ? (
+                        <Loader2 className="animate-spin w-6 h-6" />
+                    ) : showChat && hasVoice ? (
+                        <Mic className="w-6 h-6" />
+                    ) : (
+                        <MessageSquare className="w-6 h-6" />
+                    )}
+                </button>
+            </div>
         </div>
     );
 }
