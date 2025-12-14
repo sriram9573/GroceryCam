@@ -10,6 +10,7 @@ export default function Home() {
     const router = useRouter();
     const setUser = useStore((state) => state.setUser);
     const [loading, setLoading] = useState(false);
+    const [initializing, setInitializing] = useState(true);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -21,6 +22,8 @@ export default function Home() {
                     createdAt: new Date().toISOString()
                 });
                 router.push('/dashboard');
+            } else {
+                setInitializing(false);
             }
         });
         return () => unsubscribe();
@@ -34,10 +37,24 @@ export default function Home() {
             // onAuthStateChanged will handle redirection
         } catch (error) {
             console.error("Login failed", error);
-        } finally {
             setLoading(false);
         }
     };
+
+    if (initializing) {
+        return (
+            <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-24 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-200/30 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-200/30 rounded-full blur-3xl animate-pulse delay-700" />
+                </div>
+                <div className="flex flex-col items-center gap-4 animate-in fade-in duration-700">
+                    <div className="w-12 h-12 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
+                    <p className="text-neutral-500 font-medium animate-pulse">Loading kitchen...</p>
+                </div>
+            </main>
+        );
+    }
 
     return (
         <main className="flex min-h-screen flex-col items-center justify-center p-6 md:p-24 relative overflow-hidden">

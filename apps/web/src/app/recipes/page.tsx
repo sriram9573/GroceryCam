@@ -15,6 +15,34 @@ function RecipesContent() {
     const searchParams = useSearchParams();
     const autoGenerate = searchParams.get('auto');
 
+    const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+        let progressInterval: NodeJS.Timeout;
+
+        if (loading) {
+            setProgress(0);
+
+            // Simulate progress bar (fast start, slows down)
+            progressInterval = setInterval(() => {
+                setProgress(prev => {
+                    // Logarithmic-ish behavior: fast at first, slows as it approaches 90%
+                    const remaining = 95 - prev;
+                    if (remaining <= 0) return prev;
+                    // Slower decay: 1.5% of remaining per 100ms
+                    const increment = Math.max(0.1, remaining * 0.015);
+                    return Math.min(95, prev + increment);
+                });
+            }, 100);
+        } else {
+            setProgress(100);
+        }
+
+        return () => {
+            clearInterval(progressInterval);
+        };
+    }, [loading]);
+
     const initialized = useRef(false);
 
     useEffect(() => {
@@ -79,9 +107,33 @@ function RecipesContent() {
             )}
 
             {loading && (
-                <div className="text-center py-12 text-gray-500">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-orange-600" />
-                    Creating menu...
+                <div className="text-center py-16 animate-in fade-in duration-500">
+                    <div className="relative w-24 h-24 mx-auto mb-8">
+                        <div className="absolute inset-0 bg-orange-500/20 rounded-full animate-ping"></div>
+                        <div className="relative bg-white dark:bg-neutral-800 w-24 h-24 rounded-full flex items-center justify-center border-4 border-orange-100 dark:border-orange-900/30 shadow-xl">
+                            <ChefHat className="w-10 h-10 text-orange-600 animate-bounce" />
+                        </div>
+                        <div className="absolute -right-2 -top-2 text-2xl animate-bounce delay-100">🥕</div>
+                        <div className="absolute -left-2 -bottom-2 text-2xl animate-bounce delay-300">🥦</div>
+                        <div className="absolute -right-2 -bottom-2 text-2xl animate-bounce delay-500">🍗</div>
+                    </div>
+
+                    <h3 className="text-2xl font-display font-bold text-neutral-800 dark:text-neutral-100 mb-2">
+                        Chef is cooking...
+                    </h3>
+
+                    <div className="h-6 overflow-hidden relative">
+                        <p className="text-neutral-500 dark:text-neutral-400 animate-pulse">
+                            Crafting personalized recipes from your pantry...
+                        </p>
+                    </div>
+
+                    <div className="w-64 h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full mx-auto mt-6 overflow-hidden relative">
+                        <div
+                            className="h-full bg-gradient-to-r from-orange-400 to-red-500 rounded-full transition-all duration-100 ease-out"
+                            style={{ width: `${progress}%` }}
+                        ></div>
+                    </div>
                 </div>
             )}
 
@@ -129,7 +181,7 @@ function RecipesContent() {
                                 })()}
                             </h3>
                             <div className="flex gap-2 text-xs font-bold uppercase tracking-wider text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-lg shrink-0 mt-1 dark:text-orange-400 border border-orange-100 dark:border-orange-900/50">
-                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {r.cookTimeMin}m</span>
+                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatCookTime(r.cookTimeMin)}</span>
                             </div>
                         </div>
 
@@ -176,6 +228,14 @@ function RecipesContent() {
         </main>
     );
 }
+
+// Helper to format minutes into "Xhr Ymin" or "Z min"
+const formatCookTime = (mins: number) => {
+    if (mins < 60) return `${mins} min`;
+    const hours = Math.floor(mins / 60);
+    const remainingMins = mins % 60;
+    return remainingMins > 0 ? `${hours}hr ${remainingMins} min` : `${hours}hr`;
+};
 
 export default function RecipesPage() {
     return (
