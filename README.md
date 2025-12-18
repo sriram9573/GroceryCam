@@ -14,7 +14,7 @@
 
 GroceryCam is an intelligent kitchen management platform that uses **Computer Vision** and **Generative AI** to automate pantry tracking and meal planning. 
 
-Instead of manually typing grocery items, users simply snap a photo of their receipt. The app digitizes the items, categorizes them using AI, predicts expiration timelines, and generates personalized recipes based on what's actually in stock.
+Instead of manually typing grocery items, users simply snap a photo of their receipt or item. The app digitizes the items, categorizes them using AI, predicts expiration timelines, and generates personalized recipes based on what's actually in stock.
 
 ---
 
