@@ -1,26 +1,55 @@
+
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp', generationConfig: { responseMimeType: "application/json" } });
+const API_KEY = process.env.GEMINI_API_KEY || '';
+
+// Fallback to fetch if SDK fails or for better version control
+const generateWithFetch = async (prompt: string, modelName = 'gemini-2.0-flash') => {
+    if (!API_KEY) return null;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{ text: prompt }]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            console.error(`Gemini Fetch Error (${response.status}):`, err);
+            throw new Error(`Gemini API Error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        // Extract text from response
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) return null;
+
+        return contentToJSON(text);
+
+    } catch (error) {
+        console.error("Gemini Fetch Exception:", error);
+        return null;
+    }
+};
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const generateContent = async (prompt: string, retries = 3) => {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const result = await model.generateContent(prompt);
-            const text = result.response.text();
-            return contentToJSON(text);
-        } catch (e: any) {
-            console.error(`Gemini attempt ${i + 1} failed:`, e.message);
-            if (e.message.includes('403') || e.message.includes('503')) {
-                if (i === retries - 1) throw e;
-                await wait(1000 * Math.pow(2, i));
-                continue;
-            }
-            return null;
-        }
-    }
+    // Try using the Fetch implementation directly with v1beta and gemini-2.0-flash
+    // This bypasses SDK versioning issues
+    return generateWithFetch(prompt);
 };
 
 export const contentToJSON = (text: string) => {
@@ -29,7 +58,7 @@ export const contentToJSON = (text: string) => {
         return JSON.parse(clean);
     } catch (e) {
         console.error("JSON Parse Error:", e, "Text:", text);
-        return null;
+        return null; // Return null to trigger fallback in the route
     }
 }
 
